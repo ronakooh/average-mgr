@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Average Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root {
+  --bg: #f7f5f2;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --card-hover: #faf9f7;
+  --border: #e8e4de;
+  --border-light: #f0ede8;
+  --accent: #2d6a4f;
+  --accent-dim: rgba(45,106,79,0.08);
+  --accent-hover: #1b4332;
+  --accent-light: #52b788;
+  --gold: #b5862b;
+  --gold-dim: rgba(181,134,43,0.1);
+  --danger: #c1121f;
+  --danger-dim: rgba(193,18,31,0.08);
+  --info: #1d6fa4;
+  --info-dim: rgba(29,111,164,0.1);
+  --success: #2d6a4f;
+  --success-dim: rgba(45,106,79,0.1);
+  --text: #1a1a1a;
+  --text-2: #6b6560;
+  --text-3: #a09a94;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.07);
+  --font: 'Inter', sans-serif;
+  --display: 'Playfair Display', serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+/* HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 34px; height: 34px;
+  background: var(--accent);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 17px;
+}
+.logo-text { font-family: var(--display); font-size: 17px; color: var(--text); letter-spacing: -0.2px; }
+.logo-sub { font-size: 10px; color: var(--text-3); font-family: var(--mono); margin-top: -1px; }
+.header-badges { display: flex; gap: 8px; align-items: center; }
+.badge-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-2);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px;
+}
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #ccc; }
+.badge-dot.ok { background: var(--accent-light); }
+.badge-dot.err { background: var(--danger); }
+.badge-dot.busy { background: var(--gold); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+/* LAYOUT */
+.layout { display: flex; min-height: calc(100vh - 58px); }
+
+/* SIDEBAR */
+.sidebar {
+  width: 210px; background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 18px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+  flex-shrink: 0;
+}
+.nav-section { font-size: 9px; font-weight: 600; color: var(--text-3); letter-spacing: 1px; text-transform: uppercase; padding: 0 10px; margin: 10px 0 4px; }
+.nav-divider { height: 1px; background: var(--border); margin: 8px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--text-2); font-size: 13px; font-weight: 400;
+  border: none; background: transparent; width: 100%; text-align: left;
+  transition: all 0.13s; font-family: var(--font);
+}
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; border: 1px solid rgba(45,106,79,0.15); }
+.nav-item i { font-size: 15px; width: 16px; }
+
+/* MAIN */
+.main { flex: 1; padding: 24px 28px 100px; overflow-y: auto; max-width: 980px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* PAGE HEADER */
+.page-hd { margin-bottom: 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.page-title { font-family: var(--display); font-size: 22px; color: var(--text); letter-spacing: -0.3px; }
+.page-sub { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 14px; }
+.card-label { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; position: relative; overflow: hidden; }
+.stat-card::after { content:''; position:absolute; top:0;left:0;right:0; height:2px; background: var(--accent); }
+.stat-lbl { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.stat-val { font-family: var(--mono); font-size: 19px; font-weight: 500; color: var(--text); }
+.stat-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 24px; color: var(--text-3); opacity: 0.25; }
+
+/* FORMS */
+.form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+.form-row .fg { flex: 1; }
+.fg { margin-bottom: 12px; }
+.flabel { display: block; font-size: 10px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+input, select, textarea {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 13px;
+  background: var(--surface); color: var(--text);
+  outline: none; transition: border 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type="number"] { font-family: var(--mono); }
+input[readonly] { background: var(--bg); color: var(--text-2); cursor: default; }
+input.calc { background: rgba(45,106,79,0.04); color: var(--accent); font-weight: 500; font-family: var(--mono); border-color: rgba(45,106,79,0.2); }
+select option { background: var(--card); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1px solid transparent; transition: all 0.13s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { background: transparent; color: var(--text-2); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg); color: var(--text); }
+.btn-danger { background: transparent; color: var(--danger); border-color: rgba(193,18,31,0.25); }
+.btn-danger:hover { background: var(--danger-dim); }
+.btn-gold { background: var(--gold); color: #fff; border-color: var(--gold); }
+.btn-gold:hover { opacity: 0.9; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 7px; }
+
+/* PHOTO UPLOAD */
+.photo-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 20px; text-align: center;
+  cursor: pointer; transition: all 0.2s;
+  background: rgba(255,255,255,0.5);
+}
+.photo-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
+.photo-preview { width: 100%; max-height: 160px; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 10px; }
+
+/* CALC DISPLAY */
+.calc-row { display: flex; gap: 10px; background: var(--accent-dim); border: 1px solid rgba(45,106,79,0.15); border-radius: var(--radius); padding: 12px 16px; margin: 12px 0; align-items: center; flex-wrap: wrap; gap: 16px; }
+.calc-item { flex: 1; min-width: 120px; }
+.calc-item-label { font-size: 10px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.calc-item-val { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text); }
+
+/* TABLE */
+.tbl-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl thead { background: var(--bg); }
+.tbl th { text-align: left; padding: 9px 14px; font-size: 9px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.7px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border-light); vertical-align: middle; max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbl tbody tr:hover { background: var(--card-hover); }
+.tbl tbody tr:last-child td { border-bottom: none; }
+.tbl .mono { font-family: var(--mono); }
+.tbl .accent { color: var(--accent); font-weight: 500; }
+.tbl .gold { color: var(--gold); font-weight: 500; }
+.tbl .pending { color: var(--text-3); font-style: italic; font-size: 11px; }
+
+/* BADGE */
+.tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.tag-green { background: var(--success-dim); color: var(--success); }
+.tag-gold { background: var(--gold-dim); color: var(--gold); }
+.tag-grey { background: var(--bg); color: var(--text-3); }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+.filter-bar select, .filter-bar input { width: auto; min-width: 120px; font-size: 12px; padding: 7px 10px; }
+
+/* SUGGEST */
+.suggest-wrap { position: relative; }
+.suggest-list {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  z-index: 200; max-height: 200px; overflow-y: auto; display: none;
+}
+.suggest-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 14px; cursor: pointer; font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+}
+.suggest-item:last-child { border-bottom: none; }
+.suggest-item:hover, .suggest-item.active { background: var(--accent-dim); }
+
+/* SUMMARY */
+.summary-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 10px; }
+.summary-head { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.summary-body { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
+.summary-body.open { display: block; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 3px; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; backdrop-filter: blur(3px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 100%; max-width: 540px; padding: 22px; margin: auto; box-shadow: var(--shadow); }
+.modal-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.modal-title { font-family: var(--display); font-size: 16px; }
+.modal-photo { width: 100%; max-height: 240px; object-fit: contain; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 14px; background: var(--bg); }
+.detail-grid { display: grid; grid-template-columns: 130px 1fr; gap: 7px 12px; margin-bottom: 14px; }
+.dl { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.4px; padding-top: 1px; }
+.dv { font-size: 13px; color: var(--text); }
+.modal-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* EDIT BANNER */
+.edit-banner { background: var(--gold-dim); border: 1px solid rgba(181,134,43,0.3); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--gold); }
+
+/* ACTION MENU */
+.action-menu { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 170px; overflow: hidden; }
+.action-overlay { position: fixed; inset: 0; z-index: 499; }
+.action-item { display: flex; align-items: center; gap: 9px; padding: 11px 14px; font-size: 13px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: var(--font); color: var(--text); border-bottom: 1px solid var(--border-light); }
+.action-item:last-child { border-bottom: none; }
+.action-item:hover { background: var(--bg); }
+.action-item.danger { color: var(--danger); }
+
+/* EMPTY */
+.empty { text-align: center; padding: 44px 24px; color: var(--text-2); }
+.empty i { font-size: 36px; color: var(--text-3); margin-bottom: 10px; display: block; }
+
+/* LOCK */
+#lockScreen { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.lock-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px 32px; width: 100%; max-width: 360px; text-align: center; box-shadow: var(--shadow); }
+.lock-icon { width: 54px; height: 54px; background: var(--accent-dim); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 22px; color: var(--accent); }
+.lock-title { font-family: var(--display); font-size: 21px; margin-bottom: 4px; }
+.lock-sub { font-size: 12px; color: var(--text-2); margin-bottom: 22px; }
+.lock-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; font-family: var(--font); text-align: center; letter-spacing: 3px; margin-bottom: 10px; outline: none; transition: border 0.15s; }
+.lock-input:focus { border-color: var(--accent); }
+.lock-input.shake { animation: shake 0.3s; border-color: var(--danger); }
+.lock-btn { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; font-family: var(--font); cursor: pointer; }
+.lock-btn:hover { background: var(--accent-hover); }
+.lock-err { font-size: 12px; color: var(--danger); min-height: 18px; margin-top: 8px; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+/* MOBILE NAV */
+.mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); z-index: 200; padding: 6px 0 max(6px,env(safe-area-inset-bottom)); }
+.mobile-nav-inner { display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; padding: 0 4px; }
+.mobile-nav-inner::-webkit-scrollbar { display: none; }
+.mni { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; border: none; background: transparent; color: var(--text-3); font-family: var(--font); font-size: 10px; cursor: pointer; flex: 1; min-width: 52px; transition: color 0.13s; }
+.mni i { font-size: 20px; }
+.mni.active { color: var(--accent); }
+
+/* TOAST */
+#toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.25s; pointer-events: none; z-index: 9999; box-shadow: var(--shadow); }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .mobile-nav { display: block; }
+  .main { padding: 16px 16px 90px; }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .form-row { flex-direction: column; gap: 0; }
+  .form-row.inline { flex-direction: row; gap: 12px; }
+  .header { padding: 0 16px; }
+  .logo-sub { display: none; }
+  .page-hd { flex-direction: column; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOCK -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon"><i class="ti ti-ruler-2"></i></div>
+    <div class="lock-title">Average Manager</div>
+    <div class="lock-sub">Fabric costing & production tracker</div>
+    <input class="lock-input" type="password" id="lockInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')checkLock()">
+    <button class="lock-btn" onclick="checkLock()">Unlock</button>
+    <div class="lock-err" id="lockErr"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-ruler-2"></i></div>
+    <div>
+      <div class="logo-text">Average Manager</div>
+      <div class="logo-sub">Fabric Costing Tracker</div>
+    </div>
+  </div>
+  <div class="header-badges">
+    <div class="badge-pill"><span class="badge-dot" id="syncDot"></span><span id="syncTxt">Connecting...</span></div>
+  </div>
+</header>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <span class="nav-section">Entry</span>
+  <button class="nav-item active" onclick="switchTab('entry')"><i class="ti ti-plus"></i> New Entry</button>
+  <div class="nav-divider"></div>
+  <span class="nav-section">View</span>
+  <button class="nav-item" onclick="switchTab('records')"><i class="ti ti-table"></i> Records</button>
+  <button class="nav-item" onclick="switchTab('summary')"><i class="ti ti-chart-pie"></i> Summary</button>
+  <div class="nav-divider"></div>
+  <span class="nav-section">Manage</span>
+  <button class="nav-item" onclick="switchTab('settings')"><i class="ti ti-adjustments"></i> Settings</button>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ENTRY TAB -->
+<div id="tab-entry" class="section active">
+  <div class="page-hd">
+    <div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div>
+  </div>
+  <div id="editBanner" style="display:none"></div>
+  <div class="card">
+    <div class="card-label"><i class="ti ti-info-circle"></i> Basic details</div>
+    <div class="form-row inline">
+      <div class="fg">
+        <label class="flabel">Date Given (Col D)</label>
+        <input type="date" id="e-date">
+      </div>
+      <div class="fg">
+        <label class="flabel">Quality Number (Col L)</label>
+        <div class="suggest-wrap">
+          <input type="text" id="e-quality" placeholder="e.g. Q-001, Cotton-01..." autocomplete="off" oninput="showQualitySuggest()">
+          <div class="suggest-list" id="quality-suggest"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label class="flabel">Fabric Party (Col B)</label>
+        <div class="suggest-wrap">
+          <input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()">
+          <div class="suggest-list" id="party-suggest"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRINT PHOTO -->
+    <div class="fg">
+      <label class="flabel">Print Photo (Col C)</label>
+      <div class="photo-zone" onclick="document.getElementById('printPhoto').click()" id="photoZone">
+        <i class="ti ti-photo" style="font-size:24px;color:var(--text-3);display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:500">Tap to attach print design photo</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:3px">From camera or gallery</div>
+      </div>
+      <input type="file" id="printPhoto" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+      <img id="photoPreview" class="photo-preview" style="display:none" alt="Print preview">
+      <button id="removePhoto" class="btn btn-ghost btn-sm" style="display:none;margin-top:6px" onclick="removePhoto()"><i class="ti ti-x"></i> Remove photo</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label"><i class="ti ti-calculator"></i> Fabric costing (Col E–G)</div>
+    <div class="form-row inline">
+      <div class="fg">
+        <label class="flabel">Metres (Col E)</label>
+        <input type="number" id="e-mtr" placeholder="0.00" min="0" step="0.01" oninput="calcG()">
+      </div>
+      <div class="fg">
+        <label class="flabel">Rate ₹/mtr (Col F)</label>
+        <input type="number" id="e-rate" placeholder="0.00" min="0" step="0.01" oninput="calcG()">
+      </div>
+    </div>
+    <div class="calc-row" id="calcG-row" style="display:none">
+      <div class="calc-item">
+        <div class="calc-item-label">Total Cost (Col G = E × F)</div>
+        <div class="calc-item-val" id="calc-g">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border: 1px dashed var(--border); background: rgba(255,255,255,0.5);">
+    <div class="card-label" style="color:var(--gold)"><i class="ti ti-clock"></i> Production details — fill later (Col H & I)</div>
+    <div class="form-row inline">
+      <div class="fg">
+        <label class="flabel">Production Pcs (Col H)</label>
+        <input type="number" id="e-pcs" placeholder="Fill later..." min="0" oninput="calcJK()">
+      </div>
+      <div class="fg">
+        <label class="flabel">Stitcher Avg/pcs (Col I)</label>
+        <input type="number" id="e-stitch" placeholder="Fill later..." min="0" step="0.01" oninput="calcJK()">
+      </div>
+    </div>
+    <div class="calc-row" id="calcJK-row" style="display:none; background: var(--gold-dim); border-color: rgba(181,134,43,0.2);">
+      <div class="calc-item">
+        <div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (Col J = E÷H)</div>
+        <div class="calc-item-val" id="calc-j">—</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-item-label" style="color:var(--gold)">Fabric Cost/Pcs (Col K = G÷H)</div>
+        <div class="calc-item-val" id="calc-k">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end">
+    <button class="btn btn-ghost" onclick="resetEntry()">Clear</button>
+    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save Entry</button>
+  </div>
+</div>
+
+<!-- RECORDS TAB -->
+<div id="tab-records" class="section">
+  <div class="page-hd">
+    <div><div class="page-title">Records</div><div class="page-sub">All fabric costing entries</div></div>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
+  </div>
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="filter-bar">
+    <select id="f-party" onchange="renderRecords()"><option value="">All parties</option></select>
+    <select id="f-quality" onchange="renderRecords()"><option value="">All qualities</option></select>
+    <select id="f-status" onchange="renderRecords()">
+      <option value="">All entries</option>
+      <option value="complete">Complete (H & I filled)</option>
+      <option value="pending">Pending (H or I missing)</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="clearFilters()"><i class="ti ti-x"></i> Clear</button>
+  </div>
+  <div class="tbl-wrap">
+    <div id="recordsTable" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- SUMMARY TAB -->
+<div id="tab-summary" class="section">
+  <div class="page-hd">
+    <div><div class="page-title">Summary</div><div class="page-sub">By Quality Number</div></div>
+    <select id="sum-filter" onchange="renderSummary()" style="font-size:12px;padding:7px 10px;width:auto">
+      <option value="">All qualities</option>
+    </select>
+  </div>
+  <div id="sum-total" class="card" style="background:var(--accent);border-color:var(--accent);margin-bottom:16px"></div>
+  <div id="sum-body"></div>
+</div>
+
+<!-- SETTINGS TAB -->
+<div id="tab-settings" class="section">
+  <div class="page-hd"><div><div class="page-title">Settings</div><div class="page-sub">Data & sync management</div></div></div>
+  <div class="card">
+    <div class="card-label"><i class="ti ti-database"></i> Data management</div>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">Data syncs to your Google Sheet automatically. On a new device, tap "Sync from Sheets" to load all records.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="loadFromSheet().then(()=>{buildFilterDDs();renderRecords();toast('Synced from Sheets!')})"><i class="ti ti-refresh"></i> Sync from Sheets</button>
+      <button class="btn btn-ghost" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
+      <button class="btn btn-danger" onclick="confirmClear()"><i class="ti ti-trash"></i> Clear all</button>
+    </div>
+    <div style="margin-top:10px;padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2)">
+      <i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:4px"></i>
+      Last sync: <span id="lastSync" style="font-family:var(--mono)">Never</span>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="modalTitle">Entry Details</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ACTION MENU (injected dynamically) -->
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mni active" onclick="switchTab('entry');setMNA(this)"><i class="ti ti-plus"></i>New</button>
+    <button class="mni" onclick="switchTab('records');setMNA(this)"><i class="ti ti-table"></i>Records</button>
+    <button class="mni" onclick="switchTab('summary');setMNA(this)"><i class="ti ti-chart-pie"></i>Summary</button>
+    <button class="mni" onclick="switchTab('settings');setMNA(this)"><i class="ti ti-adjustments"></i>Settings</button>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const APP_PASSWORD = 'YOURPASSWORD'; // Change via sed
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPKblIngPV4XGqXhJoQpN5UzcsLpN8hgj_8Vv8ei8h_bKLYdxxiQXFm7PASfEkjPY/exec';
+const STORE = 'avgmgr_v1';
+const SYNC_TS = 'avgmgr_sync_ts';
+
+// ── STORAGE ──
+const load = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+function dedupRecs(recs) {
+  const seen = new Map();
+  recs.forEach(r => seen.set(String(r.id), r));
+  return [...seen.values()];
+}
+const getRecs = () => load(STORE, []);
+const saveRecs = r => save(STORE, dedupRecs(r));
+
+// ── LOCK ──
+function checkLock() {
+  const inp = document.getElementById('lockInput');
+  const err = document.getElementById('lockErr');
+  if (inp.value === APP_PASSWORD) {
+    sessionStorage.setItem('avgmgr_auth', '1');
+    document.getElementById('lockScreen').style.display = 'none';
+    initApp();
+  } else {
+    inp.classList.add('shake');
+    err.textContent = 'Incorrect password';
+    inp.value = '';
+    setTimeout(() => { inp.classList.remove('shake'); err.textContent = ''; }, 1500);
+  }
+}
+if (sessionStorage.getItem('avgmgr_auth') === '1') {
+  document.getElementById('lockScreen').style.display = 'none';
+  setTimeout(initApp, 50);
+} else {
+  setTimeout(() => document.getElementById('lockInput').focus(), 100);
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = 1;
+  setTimeout(() => t.style.opacity = 0, 2600);
+}
+
+// ── SYNC STATUS ──
+function setSS(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncTxt');
+  dot.className = 'badge-dot' + (state==='ok'?' ok':state==='err'?' err':state==='busy'?' busy':'');
+  txt.textContent = msg;
+}
+
+// ── TABS ──
+const TAB_IDS = ['entry','records','summary','settings'];
+function switchTab(id) {
+  document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active', ['entry','records','summary','settings'][i] === id));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'records') { buildFilterDDs(); renderRecords(); }
+  if (id === 'summary') { buildSummaryFilter(); renderSummary(); }
+  if (id === 'settings') updateLastSync();
+}
+function setMNA(el) {
+  document.querySelectorAll('.mni').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── PHOTO ──
+let photoDataUrl = null;
+function handlePhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    photoDataUrl = e.target.result;
+    const prev = document.getElementById('photoPreview');
+    prev.src = e.target.result; prev.style.display = 'block';
+    document.getElementById('removePhoto').style.display = 'inline-flex';
+    document.getElementById('photoZone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+function removePhoto() {
+  photoDataUrl = null;
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('removePhoto').style.display = 'none';
+  document.getElementById('photoZone').style.display = 'block';
+  document.getElementById('printPhoto').value = '';
+}
+
+// ── CALCULATIONS ──
+function calcG() {
+  const mtr = parseFloat(document.getElementById('e-mtr').value) || 0;
+  const rate = parseFloat(document.getElementById('e-rate').value) || 0;
+  const g = mtr * rate;
+  const row = document.getElementById('calcG-row');
+  const el = document.getElementById('calc-g');
+  if (mtr && rate) {
+    el.textContent = '₹' + g.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+    row.style.display = 'flex';
+  } else {
+    row.style.display = 'none';
+  }
+  calcJK();
+}
+
+function calcJK() {
+  const mtr = parseFloat(document.getElementById('e-mtr').value) || 0;
+  const rate = parseFloat(document.getElementById('e-rate').value) || 0;
+  const pcs = parseFloat(document.getElementById('e-pcs').value) || 0;
+  const g = mtr * rate;
+  const row = document.getElementById('calcJK-row');
+  if (pcs > 0) {
+    const j = mtr / pcs;
+    const k = g / pcs;
+    document.getElementById('calc-j').textContent = j.toFixed(4) + ' mtr';
+    document.getElementById('calc-k').textContent = '₹' + k.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+    row.style.display = 'flex';
+  } else {
+    row.style.display = 'none';
+  }
+}
+
+// ── SUGGESTIONS ──
+function getUnique(field) {
+  return [...new Set(getRecs().map(r => r[field]).filter(Boolean))].sort();
+}
+
+function showSuggest(inputId, listId, values) {
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const list = document.getElementById(listId);
+  list.innerHTML = '';
+  if (!val) { list.style.display = 'none'; return; }
+  const matches = values.filter(v => v.toLowerCase().includes(val)).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  matches.forEach(v => {
+    const el = document.createElement('div');
+    el.className = 'suggest-item';
+    el.textContent = v;
+    el.onmousedown = e => {
+      e.preventDefault();
+      document.getElementById(inputId).value = v;
+      list.style.display = 'none';
+    };
+    list.appendChild(el);
+  });
+  list.style.display = 'block';
+}
+
+function showQualitySuggest() { showSuggest('e-quality', 'quality-suggest', getUnique('quality')); }
+function showPartySuggest() { showSuggest('e-party', 'party-suggest', getUnique('party')); }
+
+['e-quality','e-party'].forEach(id => {
+  document.getElementById(id).addEventListener('blur', () => {
+    setTimeout(() => { document.querySelectorAll('.suggest-list').forEach(l => l.style.display = 'none'); }, 150);
+  });
+});
+
+// ── ENTRY ──
+let editingId = null;
+
+function saveEntry() {
+  const date = document.getElementById('e-date').value;
+  const quality = document.getElementById('e-quality').value.trim();
+  const party = document.getElementById('e-party').value.trim();
+  const mtr = parseFloat(document.getElementById('e-mtr').value) || 0;
+  const rate = parseFloat(document.getElementById('e-rate').value) || 0;
+  const pcs = parseFloat(document.getElementById('e-pcs').value) || null;
+  const stitch = parseFloat(document.getElementById('e-stitch').value) || null;
+
+  if (!party) { toast('Please enter Fabric Party (Col B)'); return; }
+  if (!mtr) { toast('Please enter Metres (Col E)'); return; }
+  if (!rate) { toast('Please enter Rate (Col F)'); return; }
+
+  const g = mtr * rate;
+  const j = pcs ? mtr / pcs : null;
+  const k = pcs ? g / pcs : null;
+
+  const rec = {
+    id: editingId || Date.now(),
+    date, quality, party,
+    print: photoDataUrl,
+    mtr, rate,
+    totalCost: g,
+    pcs, stitch,
+    avgMtrPcs: j,
+    fabricCostPcs: k
+  };
+
+  let recs = getRecs();
+  if (editingId) {
+    recs = recs.map(r => r.id === editingId ? rec : r);
+    editingId = null;
+  } else {
+    recs.push(rec);
+  }
+  saveRecs(recs);
+  syncToSheet(editingId ? 'update' : 'insert', rec);
+  toast('Entry saved!');
+  showSaveSuccess(rec);
+}
+
+function showSaveSuccess(rec) {
+  const tab = document.getElementById('tab-entry');
+  tab.innerHTML = `
+    <div style="text-align:center;padding:40px 20px">
+      <div style="width:56px;height:56px;background:var(--success-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:var(--success)"><i class="ti ti-check"></i></div>
+      <div style="font-family:var(--display);font-size:20px;margin-bottom:6px">Entry saved!</div>
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:4px">${rec.party}${rec.quality ? ' · ' + rec.quality : ''}</div>
+      <div style="font-family:var(--mono);font-size:18px;color:var(--accent);margin-bottom:24px">₹${rec.totalCost.toLocaleString('en-IN',{maximumFractionDigits:2})}</div>
+      ${!rec.pcs ? '<div style="background:var(--gold-dim);border:1px solid rgba(181,134,43,0.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:20px;display:inline-block"><i class="ti ti-clock" style="vertical-align:-2px;margin-right:6px"></i>Production details (Col H & I) pending — edit later</div>' : ''}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="switchTab('records');setMNA(document.querySelectorAll('.mni')[1])"><i class="ti ti-table"></i> View Records</button>
+        <button class="btn btn-ghost" onclick="resetEntryFull()"><i class="ti ti-plus"></i> Add Another</button>
+      </div>
+    </div>`;
+}
+
+function resetEntry() {
+  ['e-date','e-quality','e-party','e-mtr','e-rate','e-pcs','e-stitch'].forEach(id => document.getElementById(id).value = '');
+  removePhoto();
+  document.getElementById('calcG-row').style.display = 'none';
+  document.getElementById('calcJK-row').style.display = 'none';
+  editingId = null;
+  document.getElementById('editBanner').style.display = 'none';
+}
+
+function resetEntryFull() {
+  editingId = null;
+  const tab = document.getElementById('tab-entry');
+  tab.innerHTML = `
+  <div class="page-hd"><div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div></div>
+  <div id="editBanner" style="display:none"></div>
+  <div class="card">
+    <div class="card-label"><i class="ti ti-info-circle"></i> Basic details</div>
+    <div class="form-row inline">
+      <div class="fg"><label class="flabel">Date Given (Col D)</label><input type="date" id="e-date"></div>
+      <div class="fg"><label class="flabel">Quality Number (Col L)</label><div class="suggest-wrap"><input type="text" id="e-quality" placeholder="e.g. Q-001..." autocomplete="off" oninput="showQualitySuggest()"><div class="suggest-list" id="quality-suggest"></div></div></div>
+    </div>
+    <div class="form-row"><div class="fg"><label class="flabel">Fabric Party (Col B)</label><div class="suggest-wrap"><input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()"><div class="suggest-list" id="party-suggest"></div></div></div></div>
+    <div class="fg">
+      <label class="flabel">Print Photo (Col C)</label>
+      <div class="photo-zone" onclick="document.getElementById('printPhoto').click()" id="photoZone"><i class="ti ti-photo" style="font-size:24px;color:var(--text-3);display:block;margin-bottom:6px"></i><div style="font-size:13px;font-weight:500">Tap to attach print design photo</div><div style="font-size:11px;color:var(--text-3);margin-top:3px">From camera or gallery</div></div>
+      <input type="file" id="printPhoto" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+      <img id="photoPreview" class="photo-preview" style="display:none" alt="Print preview">
+      <button id="removePhoto" class="btn btn-ghost btn-sm" style="display:none;margin-top:6px" onclick="removePhoto()"><i class="ti ti-x"></i> Remove photo</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label"><i class="ti ti-calculator"></i> Fabric costing (Col E–G)</div>
+    <div class="form-row inline">
+      <div class="fg"><label class="flabel">Metres (Col E)</label><input type="number" id="e-mtr" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
+      <div class="fg"><label class="flabel">Rate ₹/mtr (Col F)</label><input type="number" id="e-rate" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
+    </div>
+    <div class="calc-row" id="calcG-row" style="display:none"><div class="calc-item"><div class="calc-item-label">Total Cost (Col G = E × F)</div><div class="calc-item-val" id="calc-g">—</div></div></div>
+  </div>
+  <div class="card" style="border:1px dashed var(--border);background:rgba(255,255,255,0.5)">
+    <div class="card-label" style="color:var(--gold)"><i class="ti ti-clock"></i> Production details — fill later (Col H & I)</div>
+    <div class="form-row inline">
+      <div class="fg"><label class="flabel">Production Pcs (Col H)</label><input type="number" id="e-pcs" placeholder="Fill later..." min="0" oninput="calcJK()"></div>
+      <div class="fg"><label class="flabel">Stitcher Avg/pcs (Col I)</label><input type="number" id="e-stitch" placeholder="Fill later..." min="0" step="0.01" oninput="calcJK()"></div>
+    </div>
+    <div class="calc-row" id="calcJK-row" style="display:none;background:var(--gold-dim);border-color:rgba(181,134,43,0.2)">
+      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (Col J = E÷H)</div><div class="calc-item-val" id="calc-j">—</div></div>
+      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Fabric Cost/Pcs (Col K = G÷H)</div><div class="calc-item-val" id="calc-k">—</div></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end">
+    <button class="btn btn-ghost" onclick="resetEntry()">Clear</button>
+    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save Entry</button>
+  </div>`;
+  photoDataUrl = null;
+  document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
+  rewireBlur();
+}
+
+function rewireBlur() {
+  ['e-quality','e-party'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', () => setTimeout(() => document.querySelectorAll('.suggest-list').forEach(l => l.style.display='none'), 150));
+  });
+}
+
+// ── EDIT ──
+function editRec(id) {
+  const r = getRecs().find(x => x.id === id); if (!r) return;
+  editingId = id;
+  resetEntryFull();
+  switchTab('entry');
+  setTimeout(() => {
+    document.getElementById('e-date').value = r.date || '';
+    document.getElementById('e-quality').value = r.quality || '';
+    document.getElementById('e-party').value = r.party || '';
+    document.getElementById('e-mtr').value = r.mtr || '';
+    document.getElementById('e-rate').value = r.rate || '';
+    document.getElementById('e-pcs').value = r.pcs || '';
+    document.getElementById('e-stitch').value = r.stitch || '';
+    if (r.print) {
+      photoDataUrl = r.print;
+      const prev = document.getElementById('photoPreview');
+      prev.src = r.print; prev.style.display = 'block';
+      document.getElementById('removePhoto').style.display = 'inline-flex';
+      document.getElementById('photoZone').style.display = 'none';
+    }
+    calcG(); calcJK();
+    const banner = document.getElementById('editBanner');
+    banner.innerHTML = `<div class="edit-banner"><span><i class="ti ti-edit" style="vertical-align:-2px;margin-right:6px"></i>Editing — ${r.party}${r.date ? ' · ' + r.date : ''}</span><button class="btn btn-ghost btn-sm" onclick="cancelEdit()"><i class="ti ti-x"></i> Cancel</button></div>`;
+    banner.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 60);
+}
+
+function cancelEdit() {
+  editingId = null;
+  resetEntryFull();
+  document.getElementById('editBanner').style.display = 'none';
+  toast('Edit cancelled');
+}
+
+// ── RECORDS ──
+function buildFilterDDs() {
+  const recs = getRecs();
+  const parties = [...new Set(recs.map(r => r.party).filter(Boolean))].sort();
+  const qualities = [...new Set(recs.map(r => r.quality).filter(Boolean))].sort();
+  const fp = document.getElementById('f-party'), fq = document.getElementById('f-quality');
+  const pv = fp.value, qv = fq.value;
+  fp.innerHTML = '<option value="">All parties</option>' + parties.map(p => `<option>${p}</option>`).join('');
+  fq.innerHTML = '<option value="">All qualities</option>' + qualities.map(q => `<option>${q}</option>`).join('');
+  fp.value = pv; fq.value = qv;
+}
+
+function renderRecords() {
+  const party = document.getElementById('f-party').value;
+  const quality = document.getElementById('f-quality').value;
+  const status = document.getElementById('f-status').value;
+
+  let recs = getRecs().filter(r => {
+    if (party && r.party !== party) return false;
+    if (quality && r.quality !== quality) return false;
+    if (status === 'complete' && (!r.pcs || !r.stitch)) return false;
+    if (status === 'pending' && r.pcs && r.stitch) return false;
+    return true;
+  }).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  const totCost = recs.reduce((s,r) => s + (r.totalCost||0), 0);
+  const totMtr = recs.reduce((s,r) => s + (r.mtr||0), 0);
+  const totPcs = recs.reduce((s,r) => s + (r.pcs||0), 0);
+  const pending = recs.filter(r => !r.pcs || !r.stitch).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-lbl">Entries</div><div class="stat-val">${recs.length}</div><i class="ti ti-file stat-icon"></i></div>
+    <div class="stat-card"><div class="stat-lbl">Total Cost</div><div class="stat-val">₹${Math.round(totCost).toLocaleString('en-IN')}</div><i class="ti ti-currency-rupee stat-icon"></i></div>
+    <div class="stat-card"><div class="stat-lbl">Total Metres</div><div class="stat-val">${totMtr.toLocaleString('en-IN',{maximumFractionDigits:1})}</div><i class="ti ti-ruler stat-icon"></i></div>
+    <div class="stat-card" style="${pending?'border-color:rgba(181,134,43,0.3)':''}"><div class="stat-lbl">Pending Prod.</div><div class="stat-val" style="color:${pending?'var(--gold)':'var(--text)'}">${pending}</div><i class="ti ti-clock stat-icon"></i></div>`;
+
+  if (!recs.length) {
+    document.getElementById('recordsTable').innerHTML = '<div class="empty"><i class="ti ti-inbox"></i><p>No entries yet</p></div>';
+    return;
+  }
+
+  const rows = recs.map(r => {
+    const complete = r.pcs && r.stitch;
+    return `<tr>
+      <td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2)">${r.date||'—'}</td>
+      <td style="width:120px;font-weight:500">${r.party||'—'}</td>
+      <td style="width:90px">${r.quality ? `<span class="tag tag-green">${r.quality}</span>` : '<span class="tag tag-grey">—</span>'}</td>
+      <td style="width:70px">${r.print ? `<i class="ti ti-photo" style="color:var(--accent-light)"></i>` : '<span style="color:var(--text-3)">—</span>'}</td>
+      <td style="width:70px;font-family:var(--mono)">${r.mtr?.toLocaleString('en-IN',{maximumFractionDigits:1})||'—'}</td>
+      <td style="width:70px;font-family:var(--mono)">₹${r.rate||'—'}</td>
+      <td style="width:100px;font-family:var(--mono);color:var(--accent);font-weight:500">₹${r.totalCost?.toLocaleString('en-IN',{maximumFractionDigits:0})||'—'}</td>
+      <td style="width:70px;font-family:var(--mono)">${r.pcs||'<span class="pending">TBD</span>'}</td>
+      <td style="width:90px;font-family:var(--mono)">${r.avgMtrPcs?.toFixed(3)||'<span class="pending">TBD</span>'}</td>
+      <td style="width:100px;font-family:var(--mono);color:var(--gold)">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>'}</td>
+      <td style="width:40px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${r.id},this)" style="font-size:16px;padding:4px 8px;letter-spacing:1px">···</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('recordsTable').innerHTML = `<table class="tbl">
+    <thead><tr>
+      <th>Date</th><th>Party (B)</th><th>Quality (L)</th><th>Print (C)</th>
+      <th>Mtr (E)</th><th>Rate (F)</th><th>Cost (G)</th>
+      <th>Pcs (H)</th><th>Avg Mtr (J)</th><th>Cost/Pcs (K)</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function clearFilters() {
+  ['f-party','f-quality','f-status'].forEach(id => document.getElementById(id).value = '');
+  renderRecords();
+}
+
+function exportCSV() {
+  const recs = getRecs(); if (!recs.length) { toast('No data'); return; }
+  const rows = [['Sl','Date (D)','Party (B)','Quality (L)','Mtr (E)','Rate (F)','Total Cost (G)','Pcs (H)','Stitch Avg (I)','Avg Mtr/Pcs (J)','Fabric Cost/Pcs (K)']];
+  recs.forEach((r,i) => rows.push([i+1, r.date||'', r.party||'', r.quality||'', r.mtr||'', r.rate||'', r.totalCost?.toFixed(2)||'', r.pcs||'', r.stitch||'', r.avgMtrPcs?.toFixed(4)||'', r.fabricCostPcs?.toFixed(2)||'']));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'average_mgr_' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+  toast('CSV exported!');
+}
+
+// ── ACTION MENU ──
+function openMenu(id, btn) {
+  document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'action-overlay';
+  overlay.onclick = () => document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove());
+  document.body.appendChild(overlay);
+  const menu = document.createElement('div');
+  menu.className = 'action-menu';
+  menu.style.cssText = 'position:fixed;z-index:9999';
+  menu.innerHTML = `
+    <button class="action-item" onclick="closeMenu();viewRec(${id})"><i class="ti ti-eye" style="color:var(--text-3)"></i> View details</button>
+    <button class="action-item" onclick="closeMenu();editRec(${id})"><i class="ti ti-edit" style="color:var(--accent)"></i> Edit</button>
+    <button class="action-item" onclick="closeMenu();dupRec(${id})"><i class="ti ti-copy" style="color:var(--info)"></i> Duplicate</button>
+    <button class="action-item danger" onclick="closeMenu();delRec(${id})"><i class="ti ti-trash"></i> Delete</button>`;
+  document.body.appendChild(menu);
+  const rect = btn.getBoundingClientRect();
+  const mw = 180, mh = 180;
+  let top = rect.bottom + 4, left = rect.right - mw;
+  if (top + mh > window.innerHeight) top = rect.top - mh - 4;
+  if (left < 8) left = 8;
+  if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
+  menu.style.top = top + 'px'; menu.style.left = left + 'px';
+}
+function closeMenu() { document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove()); }
+
+function viewRec(id) {
+  const r = getRecs().find(x => x.id === id); if (!r) return;
+  document.getElementById('modalTitle').textContent = r.party + (r.date ? ' · ' + r.date : '');
+  let h = '';
+  if (r.print) h += `<img src="${r.print}" class="modal-photo" alt="Print design">`;
+  h += `<div class="detail-grid">
+    <span class="dl">Date (D)</span><span class="dv" style="font-family:var(--mono)">${r.date||'—'}</span>
+    <span class="dl">Party (B)</span><span class="dv" style="font-weight:500">${r.party||'—'}</span>
+    <span class="dl">Quality (L)</span><span class="dv">${r.quality ? `<span class="tag tag-green">${r.quality}</span>` : '—'}</span>
+    <span class="dl">Metres (E)</span><span class="dv" style="font-family:var(--mono)">${r.mtr?.toLocaleString('en-IN',{maximumFractionDigits:2})||'—'} mtr</span>
+    <span class="dl">Rate (F)</span><span class="dv" style="font-family:var(--mono)">₹${r.rate||'—'}/mtr</span>
+    <span class="dl">Total Cost (G)</span><span class="dv" style="font-family:var(--mono);color:var(--accent);font-weight:500">₹${r.totalCost?.toLocaleString('en-IN',{maximumFractionDigits:2})||'—'}</span>
+  </div>
+  <div class="modal-divider"></div>
+  <div class="detail-grid">
+    <span class="dl">Pcs (H)</span><span class="dv" style="font-family:var(--mono)">${r.pcs || '<span style="color:var(--gold)">Pending</span>'}</span>
+    <span class="dl">Stitch Avg (I)</span><span class="dv" style="font-family:var(--mono)">${r.stitch || '<span style="color:var(--gold)">Pending</span>'}</span>
+    <span class="dl">Avg Mtr/Pcs (J)</span><span class="dv" style="font-family:var(--mono);color:var(--gold)">${r.avgMtrPcs ? r.avgMtrPcs.toFixed(4)+' mtr' : '<span style="color:var(--gold)">TBD</span>'}</span>
+    <span class="dl">Cost/Pcs (K)</span><span class="dv" style="font-family:var(--mono);color:var(--gold);font-weight:500">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span style="color:var(--gold)">TBD</span>'}</span>
+  </div>`;
+  h += `<div style="display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+    <button class="btn btn-primary" style="flex:1" onclick="closeModal();editRec(${id})"><i class="ti ti-edit"></i> Edit</button>
+    <button class="btn btn-ghost" onclick="closeModal();dupRec(${id})"><i class="ti ti-copy"></i> Duplicate</button>
+    <button class="btn btn-danger" onclick="closeModal();delRec(${id})"><i class="ti ti-trash"></i></button>
+  </div>`;
+  document.getElementById('modalBody').innerHTML = h;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+document.getElementById('detailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+function delRec(id) {
+  if (!confirm('Delete this entry?')) return;
+  const rec = getRecs().find(r => r.id === id);
+  saveRecs(getRecs().filter(r => r.id !== id));
+  if (rec) syncToSheet('delete', { id });
+  buildFilterDDs(); renderRecords(); toast('Deleted');
+}
+
+function dupRec(id) {
+  const r = getRecs().find(x => x.id === id); if (!r) return;
+  const copy = { ...r, id: Date.now(), date: new Date().toISOString().slice(0,10) };
+  const recs = getRecs(); recs.push(copy); saveRecs(recs);
+  syncToSheet('insert', copy);
+  toast('Duplicated'); buildFilterDDs(); renderRecords();
+}
+
+// ── SUMMARY ──
+function buildSummaryFilter() {
+  const qualities = [...new Set(getRecs().map(r => r.quality).filter(Boolean))].sort();
+  const sel = document.getElementById('sum-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All qualities</option>' + qualities.map(q => `<option>${q}</option>`).join('');
+  sel.value = cur;
+}
+
+function renderSummary() {
+  const filterQ = document.getElementById('sum-filter').value;
+  const allRecs = getRecs();
+  const recs = filterQ ? allRecs.filter(r => r.quality === filterQ) : allRecs;
+
+  const grandCost = recs.reduce((s,r) => s + (r.totalCost||0), 0);
+  const grandMtr = recs.reduce((s,r) => s + (r.mtr||0), 0);
+  const grandPcs = recs.reduce((s,r) => s + (r.pcs||0), 0);
+
+  document.getElementById('sum-total').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div><div style="font-size:10px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;opacity:0.8;color:#fff">${filterQ || 'All Qualities'}</div>
+      <div style="font-family:var(--mono);font-size:26px;font-weight:500;color:#fff;margin-top:4px">₹${Math.round(grandCost).toLocaleString('en-IN')}</div></div>
+      <div style="display:flex;gap:20px">
+        <div style="text-align:right"><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.4px">Metres</div><div style="font-family:var(--mono);font-size:16px;color:#fff">${grandMtr.toLocaleString('en-IN',{maximumFractionDigits:1})}</div></div>
+        <div style="text-align:right"><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.4px">Pcs</div><div style="font-family:var(--mono);font-size:16px;color:#fff">${grandPcs.toLocaleString('en-IN')}</div></div>
+        <div style="text-align:right"><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.4px">Entries</div><div style="font-family:var(--mono);font-size:16px;color:#fff">${recs.length}</div></div>
+      </div>
+    </div>`;
+
+  // Group by quality
+  const qMap = {};
+  recs.forEach(r => {
+    const q = r.quality || '(No Quality)';
+    if (!qMap[q]) qMap[q] = { cost:0, mtr:0, pcs:0, count:0, parties: new Set() };
+    qMap[q].cost += r.totalCost || 0;
+    qMap[q].mtr += r.mtr || 0;
+    qMap[q].pcs += r.pcs || 0;
+    qMap[q].count++;
+    if (r.party) qMap[q].parties.add(r.party);
+  });
+
+  const sorted = Object.entries(qMap).sort((a,b) => b[1].cost - a[1].cost);
+  const maxCost = sorted.length ? sorted[0][1].cost : 1;
+  const colors = ['#2d6a4f','#1d6fa4','#b5862b','#6a2d6a','#6a2d2d','#2d4a6a','#4a6a2d','#6a4a2d'];
+
+  let html = '';
+  sorted.forEach(([q, data], i) => {
+    const pct = grandCost > 0 ? Math.round((data.cost / grandCost) * 100) : 0;
+    const barPct = Math.round((data.cost / maxCost) * 100);
+    const color = colors[i % colors.length];
+    const avgCostPcs = data.pcs > 0 ? data.cost / data.pcs : null;
+    const avgMtrPcs = data.pcs > 0 ? data.mtr / data.pcs : null;
+
+    // Party breakdown
+    const partyRecs = recs.filter(r => (r.quality || '(No Quality)') === q);
+    const partyMap = {};
+    partyRecs.forEach(r => {
+      const p = r.party || 'Unknown';
+      if (!partyMap[p]) partyMap[p] = 0;
+      partyMap[p] += r.totalCost || 0;
+    });
+    const partySorted = Object.entries(partyMap).sort((a,b) => b[1]-a[1]);
+    const maxP = partySorted.length ? partySorted[0][1] : 1;
+    const partyChart = partySorted.map(([p, cost]) => {
+      const pp = Math.round((cost / maxP) * 100);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:11px;color:var(--text-2);width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${p}</div>
+        <div style="flex:1;height:18px;background:var(--border);border-radius:3px;overflow:hidden;position:relative">
+          <div style="height:100%;width:${pp}%;background:${color};opacity:0.7;border-radius:3px"></div>
+          <div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:10px;font-family:var(--mono);color:${pp>35?'#fff':'var(--text)'}">₹${Math.round(cost).toLocaleString('en-IN')}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `<div class="summary-card">
+      <div class="summary-head" onclick="toggleSum('sq-${i}','sq-icon-${i}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          <div>
+            <div style="font-size:14px;font-weight:500">${q}</div>
+            <div style="font-size:11px;color:var(--text-2);margin-top:1px">${data.count} entr${data.count===1?'y':'ies'} · ${data.parties.size} part${data.parties.size===1?'y':'ies'}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:${color}">₹${Math.round(data.cost).toLocaleString('en-IN')}</div>
+            <div style="font-size:10px;color:var(--text-3)">${pct}% of total</div>
+          </div>
+          <i class="ti ti-chevron-down" id="sq-icon-${i}" style="color:var(--text-3);transition:transform 0.2s"></i>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${barPct}%;background:${color}"></div></div>
+      <div id="sq-${i}" class="summary-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px">Total Metres</div><div style="font-family:var(--mono);font-size:14px;margin-top:2px">${data.mtr.toLocaleString('en-IN',{maximumFractionDigits:1})}</div></div>
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px">Total Pcs</div><div style="font-family:var(--mono);font-size:14px;margin-top:2px">${data.pcs || '—'}</div></div>
+          <div style="background:var(--gold-dim);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.4px">Avg Cost/Pcs</div><div style="font-family:var(--mono);font-size:14px;color:var(--gold);margin-top:2px">${avgCostPcs ? '₹'+avgCostPcs.toFixed(2) : '—'}</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Party breakdown</div>
+        ${partyChart}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:11px" onclick="document.getElementById('f-quality').value='${q}';switchTab('records');renderRecords()">
+          <i class="ti ti-table"></i> View ${q} records
+        </button>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('sum-body').innerHTML = html || '<div class="empty"><i class="ti ti-inbox"></i><p>No data yet</p></div>';
+}
+
+function toggleSum(bodyId, iconId) {
+  const body = document.getElementById(bodyId);
+  const icon = document.getElementById(iconId);
+  const open = body.classList.toggle('open');
+  if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+// ── GOOGLE SHEETS SYNC ──
+async function syncToSheet(action, rec) {
+  if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE')) return;
+  setSS('busy', 'Syncing...');
+  try {
+    const payload = { action, ...rec };
+    delete payload.print; // don't send image to sheet
+    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+    setSS('ok', 'Synced · ' + new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }));
+    localStorage.setItem(SYNC_TS, Date.now());
+  } catch {
+    setSS('err', 'Sync failed — saved locally');
+  }
+}
+
+async function loadFromSheet() {
+  if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE')) { setSS('err', 'Sheet not configured'); return; }
+  setSS('busy', 'Loading from Sheets...');
+  try {
+    const res = await fetch(SCRIPT_URL + '?load=1', { mode: 'cors' });
+    const data = await res.json();
+    if (data.status === 'ok' && data.records && data.records.length > 0) {
+      const localRecs = getRecs();
+      const localImages = {};
+      localRecs.forEach(r => { if (r.print) localImages[String(r.id)] = r.print; });
+      const merged = data.records.map(r => ({ ...r, print: localImages[String(r.id)] || null }));
+      const sheetIds = new Set(data.records.map(r => String(r.id)));
+      const offline = localRecs.filter(r => !sheetIds.has(String(r.id)));
+      saveRecs(dedupRecs([...merged, ...offline]));
+      setSS('ok', `${data.records.length} records loaded`);
+      localStorage.setItem(SYNC_TS, Date.now());
+      toast(`✓ ${data.records.length} records from Sheets`);
+    } else {
+      setSS('ok', 'Connected · No records yet');
+    }
+  } catch {
+    setSS('err', 'Could not reach Sheets');
+  }
+}
+
+function updateLastSync() {
+  const ts = localStorage.getItem(SYNC_TS);
+  const el = document.getElementById('lastSync');
+  if (!el) return;
+  if (!ts) { el.textContent = 'Never'; return; }
+  const d = new Date(parseInt(ts));
+  el.textContent = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+}
+
+function confirmClear() {
+  if (!confirm('Delete ALL records permanently?')) return;
+  saveRecs([]); buildFilterDDs(); renderRecords(); toast('All cleared');
+}
+
+function initApp() {
+  document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
+  rewireBlur();
+  if (SCRIPT_URL && !SCRIPT_URL.includes('PASTE')) loadFromSheet();
+  else setSS('err', 'Sheet not configured — Settings to sync');
+}
+</script>
+</body>
+</html>
