@@ -180,10 +180,10 @@ select option { background: var(--card); }
 
 /* TABLE */
 .tbl-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.tbl { width: 100%; border-collapse: collapse; }
+.tbl { width: 100%; border-collapse: collapse; table-layout: auto; }
 .tbl thead { background: var(--bg); }
 .tbl th { text-align: left; padding: 9px 14px; font-size: 9px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.7px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.tbl td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border-light); vertical-align: middle; max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbl td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border-light); vertical-align: middle; white-space: nowrap; }
 .tbl tbody tr:hover { background: var(--card-hover); }
 .tbl tbody tr:last-child td { border-bottom: none; }
 .tbl .mono { font-family: var(--mono); }
@@ -857,7 +857,7 @@ function resetEntry() {
 }
 
 function resetEntryFull() {
-  editingId = null;
+  // NOTE: do NOT reset editingId here — editRec sets it after calling this
   const tab = document.getElementById('tab-entry');
   tab.innerHTML = `
   <div class="page-hd"><div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div></div>
@@ -915,8 +915,8 @@ function rewireBlur() {
 // ── EDIT ──
 function editRec(id) {
   const r = getRecs().find(x => x.id === id); if (!r) return;
-  editingId = id;
-  resetEntryFull();
+  resetEntryFull();    // rebuild DOM — does NOT clear editingId anymore
+  editingId = id;      // set AFTER rebuild
   switchTab('entry');
   setTimeout(() => {
     document.getElementById('e-date').value = r.date || '';
@@ -944,8 +944,7 @@ function editRec(id) {
 function cancelEdit() {
   editingId = null;
   resetEntryFull();
-  document.getElementById('editBanner').style.display = 'none';
-  toast('Edit cancelled');
+  toast('Edit cancelled — no changes made');
 }
 
 // ── RECORDS ──
@@ -991,25 +990,28 @@ function renderRecords() {
 
   const rows = recs.map(r => {
     const complete = r.pcs && r.stitch;
+    const photoCell = r.print
+      ? `<img src="${r.print}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" onclick="viewRec(${r.id})" alt="Print">`
+      : '<span style="color:var(--text-3);font-size:11px">—</span>';
     return `<tr>
-      <td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2)">${r.date||'—'}</td>
-      <td style="width:120px;font-weight:500">${r.party||'—'}</td>
-      <td style="width:90px">${r.quality ? `<span class="tag tag-green">${r.quality}</span>` : '<span class="tag tag-grey">—</span>'}</td>
-      <td style="width:70px">${r.print ? `<i class="ti ti-photo" style="color:var(--accent-light)"></i>` : '<span style="color:var(--text-3)">—</span>'}</td>
-      <td style="width:70px;font-family:var(--mono)">${r.mtr?.toLocaleString('en-IN',{maximumFractionDigits:1})||'—'}</td>
-      <td style="width:70px;font-family:var(--mono)">₹${r.rate||'—'}</td>
-      <td style="width:100px;font-family:var(--mono);color:var(--accent);font-weight:500">₹${r.totalCost?.toLocaleString('en-IN',{maximumFractionDigits:0})||'—'}</td>
-      <td style="width:70px;font-family:var(--mono)">${r.pcs||'<span class="pending">TBD</span>'}</td>
-      <td style="width:90px;font-family:var(--mono)">${r.avgMtrPcs?.toFixed(3)||'<span class="pending">TBD</span>'}</td>
-      <td style="width:100px;font-family:var(--mono);color:var(--gold)">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>'}</td>
-      <td style="width:40px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${r.id},this)" style="font-size:18px;padding:6px 10px;letter-spacing:2px;font-weight:700;color:var(--text-2)">···</button></td>
+      <td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap">${r.date||'—'}</td>
+      <td style="width:120px;font-weight:500;white-space:nowrap">${r.party||'—'}</td>
+      <td style="width:90px;white-space:nowrap">${r.quality ? `<span class="tag tag-green">${r.quality}</span>` : '<span class="tag tag-grey">—</span>'}</td>
+      <td style="width:50px">${photoCell}</td>
+      <td style="width:70px;font-family:var(--mono);white-space:nowrap">${r.mtr?.toLocaleString('en-IN',{maximumFractionDigits:1})||'—'}</td>
+      <td style="width:70px;font-family:var(--mono);white-space:nowrap">₹${r.rate||'—'}</td>
+      <td style="min-width:110px;font-family:var(--mono);color:var(--accent);font-weight:500;white-space:nowrap">₹${r.totalCost?.toLocaleString('en-IN',{maximumFractionDigits:0})||'—'}</td>
+      <td style="width:70px;font-family:var(--mono);white-space:nowrap">${r.pcs||'<span class="pending">TBD</span>'}</td>
+      <td style="width:90px;font-family:var(--mono);white-space:nowrap">${r.avgMtrPcs?.toFixed(3)||'<span class="pending">TBD</span>'}</td>
+      <td style="min-width:100px;font-family:var(--mono);color:var(--gold);white-space:nowrap">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>'}</td>
+      <td style="width:44px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${r.id},this)" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>
     </tr>`;
   }).join('');
 
-  document.getElementById('recordsTable').innerHTML = `<table class="tbl">
+  document.getElementById('recordsTable').innerHTML = `<table class="tbl" style="table-layout:auto">
     <thead><tr>
-      <th>Date</th><th>Party (B)</th><th>Quality (L)</th><th>Print (C)</th>
-      <th>Mtr (E)</th><th>Rate (F)</th><th>Cost (G)</th>
+      <th>Date</th><th>Party (B)</th><th>Quality (L)</th><th>Print</th>
+      <th>Mtr (E)</th><th>Rate (F)</th><th>Total Cost (G)</th>
       <th>Pcs (H)</th><th>Avg Mtr (J)</th><th>Cost/Pcs (K)</th><th></th>
     </tr></thead>
     <tbody>${rows}</tbody>
@@ -1222,13 +1224,36 @@ function toggleSum(bodyId, iconId) {
   if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
 }
 
+// ── PHOTO COMPRESSION ──
+function compressPhoto(dataUrl, maxWidth=300, quality=0.6) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 // ── GOOGLE SHEETS SYNC ──
 async function syncToSheet(action, rec) {
   if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE')) return;
   setSS('busy', 'Syncing...');
   try {
     const payload = { action, ...rec };
-    delete payload.print; // don't send image to sheet
+    // Compress photo before sending to sheet
+    if (payload.print) {
+      try {
+        payload.print = await compressPhoto(payload.print, 300, 0.5);
+      } catch {
+        delete payload.print;
+      }
+    }
     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
     setSS('ok', 'Synced · ' + new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }));
     localStorage.setItem(SYNC_TS, Date.now());
