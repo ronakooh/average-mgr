@@ -1225,7 +1225,7 @@ function toggleSum(bodyId, iconId) {
 }
 
 // ── PHOTO COMPRESSION ──
-function compressPhoto(dataUrl, maxWidth=300, quality=0.6) {
+function compressPhoto(dataUrl, maxWidth=600, quality=0.7) {
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
@@ -1246,13 +1246,9 @@ async function syncToSheet(action, rec) {
   setSS('busy', 'Syncing...');
   try {
     const payload = { action, ...rec };
-    // Compress photo before sending to sheet
-    if (payload.print) {
-      try {
-        payload.print = await compressPhoto(payload.print, 300, 0.5);
-      } catch {
-        delete payload.print;
-      }
+    // Compress photo before sending (Drive handles storage, keep reasonable size)
+    if (payload.print && payload.print.startsWith('data:')) {
+      try { payload.print = await compressPhoto(payload.print, 600, 0.7); } catch { delete payload.print; }
     }
     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
     setSS('ok', 'Synced · ' + new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }));
