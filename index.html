@@ -241,9 +241,9 @@ select option { background: var(--card); }
 .edit-banner { background: var(--gold-dim); border: 1px solid rgba(181,134,43,0.3); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--gold); }
 
 /* ACTION MENU */
-.action-menu { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 170px; overflow: hidden; }
+.action-menu { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 180px; overflow: hidden; }
 .action-overlay { position: fixed; inset: 0; z-index: 499; }
-.action-item { display: flex; align-items: center; gap: 9px; padding: 11px 14px; font-size: 13px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: var(--font); color: var(--text); border-bottom: 1px solid var(--border-light); }
+.action-item { display: flex; align-items: center; gap: 10px; padding: 13px 16px; font-size: 14px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: var(--font); color: var(--text); border-bottom: 1px solid var(--border-light); font-weight: 500; }
 .action-item:last-child { border-bottom: none; }
 .action-item:hover { background: var(--bg); }
 .action-item.danger { color: var(--danger); }
@@ -690,6 +690,7 @@ function saveEntry() {
   const j = pcs ? mtr / pcs : null;
   const k = pcs ? g / pcs : null;
 
+  const isEdit = !!editingId;
   const rec = {
     id: editingId || Date.now(),
     date, quality, party,
@@ -702,16 +703,132 @@ function saveEntry() {
   };
 
   let recs = getRecs();
-  if (editingId) {
-    recs = recs.map(r => r.id === editingId ? rec : r);
-    editingId = null;
+  if (isEdit) {
+    recs = recs.map(r => r.id === rec.id ? rec : r);
   } else {
     recs.push(rec);
   }
   saveRecs(recs);
-  syncToSheet(editingId ? 'update' : 'insert', rec);
+  editingId = null;
+  syncToSheet(isEdit ? 'update' : 'insert', rec);
   toast('Entry saved!');
   showSaveSuccess(rec);
+}
+
+function showSaveSuccess(rec) {
+  const tab = document.getElementById('tab-entry');
+  tab.innerHTML = `
+    <div style="text-align:center;padding:40px 20px">
+      <div style="width:56px;height:56px;background:var(--success-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:var(--success)"><i class="ti ti-check"></i></div>
+      <div style="font-family:var(--display);font-size:20px;margin-bottom:6px">Entry saved!</div>
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:4px">${rec.party}${rec.quality ? ' · ' + rec.quality : ''}</div>
+      <div style="font-family:var(--mono);font-size:18px;color:var(--accent);margin-bottom:24px">₹${rec.totalCost.toLocaleString('en-IN',{maximumFractionDigits:2})}</div>
+      ${!rec.pcs ? '<div style="background:var(--gold-dim);border:1px solid rgba(181,134,43,0.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:20px;display:inline-block"><i class="ti ti-clock" style="vertical-align:-2px;margin-right:6px"></i>Production details (Col H & I) pending — edit later</div>' : ''}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="switchTab('records');setMNA(document.querySelectorAll('.mni')[1])"><i class="ti ti-table"></i> View Records</button>
+        <button class="btn btn-ghost" onclick="resetEntryFull()"><i class="ti ti-plus"></i> Add Another</button>
+      </div>
+    </div>`;
+}
+
+function resetEntry() {
+  ['e-date','e-quality','e-party','e-mtr','e-rate','e-pcs','e-stitch'].forEach(id => document.getElementById(id).value = '');
+  removePhoto();
+  document.getElementById('calcG-row').style.display = 'none';
+  document.getElementById('calcJK-row').style.display = 'none';
+  editingId = null;
+  document.getElementById('editBanner').style.display = 'none';
+}
+
+function resetEntryFull() {
+  // Don't reset editingId here — editRec sets it after calling this
+  const tab = document.getElementById('tab-entry');
+  tab.innerHTML = `
+  <div class="page-hd"><div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div></div>
+  <div id="editBanner" style="display:none"></div>
+  <div class="card">
+    <div class="card-label"><i class="ti ti-info-circle"></i> Basic details</div>
+    <div class="form-row inline">
+      <div class="fg"><label class="flabel">Date Given (Col D)</label><input type="date" id="e-date"></div>
+      <div class="fg"><label class="flabel">Quality Number (Col L)</label><div class="suggest-wrap"><input type="text" id="e-quality" placeholder="e.g. Q-001..." autocomplete="off" oninput="showQualitySuggest()"><div class="suggest-list" id="quality-suggest"></div></div></div>
+    </div>
+    <div class="form-row"><div class="fg"><label class="flabel">Fabric Party (Col B)</label><div class="suggest-wrap"><input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()"><div class="suggest-list" id="party-suggest"></div></div></div></div>
+    <div class="fg">
+      <label class="flabel">Print Photo (Col C)</label>
+      <div class="photo-zone" onclick="document.getElementById('printPhoto').click()" id="photoZone"><i class="ti ti-photo" style="font-size:24px;color:var(--text-3);display:block;margin-bottom:6px"></i><div style="font-size:13px;font-weight:500">Tap to attach print design photo</div><div style="font-size:11px;color:var(--text-3);margin-top:3px">From camera or gallery</div></div>
+      <input type="file" id="printPhoto" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+      <img id="photoPreview" class="photo-preview" style="display:none" alt="Print preview">
+      <button id="removePhoto" class="btn btn-ghost btn-sm" style="display:none;margin-top:6px" onclick="removePhoto()"><i class="ti ti-x"></i> Remove photo</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label"><i class="ti ti-calculator"></i> Fabric costing (Col E–G)</div>
+    <div class="form-row inline">
+      <div class="fg"><label class="flabel">Metres (Col E)</label><input type="number" id="e-mtr" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
+      <div class="fg"><label class="flabel">Rate ₹/mtr (Col F)</label><input type="number" id="e-rate" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
+    </div>
+    <div class="calc-row" id="calcG-row" style="display:none"><div class="calc-item"><div class="calc-item-label">Total Cost (Col G = E × F)</div><div class="calc-item-val" id="calc-g">—</div></div></div>
+  </div>
+  <div class="card" style="border:1px dashed var(--border);background:rgba(255,255,255,0.5)">
+    <div class="card-label" style="color:var(--gold)"><i class="ti ti-clock"></i> Production details — fill later (Col H & I)</div>
+    <div class="form-row inline">
+      <div class="fg"><label class="flabel">Production Pcs (Col H)</label><input type="number" id="e-pcs" placeholder="Fill later..." min="0" oninput="calcJK()"></div>
+      <div class="fg"><label class="flabel">Stitcher Avg/pcs (Col I)</label><input type="number" id="e-stitch" placeholder="Fill later..." min="0" step="0.01" oninput="calcJK()"></div>
+    </div>
+    <div class="calc-row" id="calcJK-row" style="display:none;background:var(--gold-dim);border-color:rgba(181,134,43,0.2)">
+      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (Col J = E÷H)</div><div class="calc-item-val" id="calc-j">—</div></div>
+      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Fabric Cost/Pcs (Col K = G÷H)</div><div class="calc-item-val" id="calc-k">—</div></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end">
+    <button class="btn btn-ghost" onclick="editingId=null;resetEntry()">Clear</button>
+    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save Entry</button>
+  </div>`;
+  photoDataUrl = null;
+  document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
+  rewireBlur();
+}
+
+function rewireBlur() {
+  ['e-quality','e-party'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', () => setTimeout(() => document.querySelectorAll('.suggest-list').forEach(l => l.style.display='none'), 150));
+  });
+}
+
+// ── EDIT ──
+function editRec(id) {
+  const r = getRecs().find(x => x.id === id); if (!r) return;
+  resetEntryFull(); // rebuild DOM first
+  editingId = id;  // set AFTER resetEntryFull so it's not cleared
+  switchTab('entry');
+  setTimeout(() => {
+    document.getElementById('e-date').value = r.date || '';
+    document.getElementById('e-quality').value = r.quality || '';
+    document.getElementById('e-party').value = r.party || '';
+    document.getElementById('e-mtr').value = r.mtr || '';
+    document.getElementById('e-rate').value = r.rate || '';
+    document.getElementById('e-pcs').value = r.pcs || '';
+    document.getElementById('e-stitch').value = r.stitch || '';
+    if (r.print) {
+      photoDataUrl = r.print;
+      const prev = document.getElementById('photoPreview');
+      prev.src = r.print; prev.style.display = 'block';
+      document.getElementById('removePhoto').style.display = 'inline-flex';
+      document.getElementById('photoZone').style.display = 'none';
+    }
+    calcG(); calcJK();
+    const banner = document.getElementById('editBanner');
+    banner.innerHTML = `<div class="edit-banner"><span><i class="ti ti-edit" style="vertical-align:-2px;margin-right:6px"></i>Editing — ${r.party}${r.date ? ' · ' + r.date : ''}</span><button class="btn btn-ghost btn-sm" onclick="cancelEdit()"><i class="ti ti-x"></i> Cancel</button></div>`;
+    banner.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 60);
+}
+
+function cancelEdit() {
+  editingId = null;
+  resetEntryFull();
+  toast('Edit cancelled — no changes made');
 }
 
 function showSaveSuccess(rec) {
@@ -885,7 +1002,7 @@ function renderRecords() {
       <td style="width:70px;font-family:var(--mono)">${r.pcs||'<span class="pending">TBD</span>'}</td>
       <td style="width:90px;font-family:var(--mono)">${r.avgMtrPcs?.toFixed(3)||'<span class="pending">TBD</span>'}</td>
       <td style="width:100px;font-family:var(--mono);color:var(--gold)">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>'}</td>
-      <td style="width:40px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${r.id},this)" style="font-size:16px;padding:4px 8px;letter-spacing:1px">···</button></td>
+      <td style="width:40px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${r.id},this)" style="font-size:18px;padding:6px 10px;letter-spacing:2px;font-weight:700;color:var(--text-2)">···</button></td>
     </tr>`;
   }).join('');
 
