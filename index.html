@@ -1333,7 +1333,17 @@ async function loadFromSheet() {
       const localRecs = getRecs();
       const localImages = {};
       localRecs.forEach(r => { if (r.print) localImages[String(r.id)] = r.print; });
-      const merged = data.records.map(r => ({ ...r, print: localImages[String(r.id)] || null }));
+      const merged = data.records.map(r => {
+        const sheetPhoto = r.print || null; // Cloudinary URL from sheet
+        const localPhoto = localImages[String(r.id)] || null; // local base64
+        // Prefer Cloudinary URL (starts with https) over local base64
+        // If sheet has no photo, keep local
+        let photo = null;
+        if (sheetPhoto && sheetPhoto.startsWith('http')) photo = sheetPhoto;
+        else if (localPhoto && localPhoto.startsWith('http')) photo = localPhoto;
+        else if (localPhoto) photo = localPhoto; // keep local base64 as fallback
+        return { ...r, print: photo };
+      });
       const sheetIds = new Set(data.records.map(r => String(r.id)));
       const offline = localRecs.filter(r => !sheetIds.has(String(r.id)));
       saveRecs(dedupRecs([...merged, ...offline]));
