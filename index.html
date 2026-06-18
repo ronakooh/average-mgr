@@ -705,7 +705,14 @@ async function saveEntry() {
   recs.push(...savedRecs);
   saveRecs(recs);
   editingGroupId = null;
-  for (const rec of savedRecs) await syncToSheet(isEdit ? 'update' : 'insert', rec);
+
+  // Sync items one by one — sequential to avoid Cloudinary race conditions
+  for (let i = 0; i < savedRecs.length; i++) {
+    const rec = savedRecs[i];
+    setSS('busy', `Saving item ${i+1} of ${savedRecs.length}...`);
+    await syncToSheet(isEdit ? 'update' : 'insert', rec);
+  }
+  setSS('ok', 'Synced · ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}));
   const totalCost = savedRecs.reduce((s,r) => s + r.totalCost, 0);
   const hasPending = savedRecs.some(r => !r.pcs);
   const tab = document.getElementById('tab-entry');
@@ -1143,7 +1150,6 @@ window.testCloudinary = async function() {
 // ── GOOGLE SHEETS SYNC ──
 async function syncToSheet(action, rec) {
   if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE')) return;
-  setSS('busy', 'Syncing...');
   try {
     const payload = { action, ...rec };
     // Upload photo to Cloudinary if it's a local base64 image
@@ -1151,17 +1157,16 @@ async function syncToSheet(action, rec) {
       setSS('busy', 'Uploading photo...');
       try {
         payload.print = await uploadToCloudinary(payload.print);
-        // Also update local record with Cloudinary URL
+        // Update local record with Cloudinary URL
         const recs = getRecs();
         const updated = recs.map(r => r.id === rec.id ? { ...r, print: payload.print } : r);
         saveRecs(updated);
       } catch(err) {
         console.error('Photo upload failed:', err);
-        delete payload.print; // send without photo if upload fails
+        delete payload.print;
       }
     }
     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-    setSS('ok', 'Synced · ' + new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }));
     localStorage.setItem(SYNC_TS, Date.now());
   } catch {
     setSS('err', 'Sync failed — saved locally');
