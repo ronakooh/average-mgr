@@ -697,7 +697,7 @@ async function saveEntry() {
     const g = mtr * rate;
     const j = pcs ? mtr/pcs : null;
     const k = pcs ? g/pcs : null;
-    const recId = parseInt(groupId + '' + String(i+1).padStart(2,'0'));
+    const recId = groupId + '_' + (i+1);  // string ID avoids integer overflow
     savedRecs.push({ id: recId, groupId, date, quality, party, itemName, print: itemPhotos[idx]||null, mtr, rate, totalCost: g, pcs, stitch, avgMtrPcs: j, fabricCostPcs: k });
   }
   let recs = getRecs();
@@ -1097,29 +1097,25 @@ function compressPhoto(dataUrl, maxWidth=800, quality=0.8) {
   });
 }
 
-async function uploadToCloudinary(dataUrl) {
+async function uploadToCloudinary(dataUrl, filename) {
   try {
     const compressed = await compressPhoto(dataUrl, 800, 0.8);
-    // Convert base64 to blob properly
     const byteStr = atob(compressed.split(',')[1]);
     const mimeType = compressed.split(';')[0].split(':')[1] || 'image/jpeg';
     const ab = new ArrayBuffer(byteStr.length);
     const ia = new Uint8Array(ab);
     for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
     const blob = new Blob([ab], { type: mimeType });
-
     const formData = new FormData();
-    formData.append('file', blob, 'print.jpg');
+    formData.append('file', blob, filename || ('print_' + Date.now() + '.jpg'));
     formData.append('upload_preset', CLOUDINARY_PRESET);
     formData.append('folder', 'average-manager');
-
     const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
       method: 'POST',
       body: formData
     });
     const data = await response.json();
     if (data.secure_url) return data.secure_url;
-    console.error('Cloudinary error:', data);
     throw new Error(data.error?.message || 'Upload failed');
   } catch(err) {
     console.error('uploadToCloudinary error:', err);
@@ -1152,12 +1148,11 @@ async function syncToSheet(action, rec) {
   if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE')) return;
   try {
     const payload = { action, ...rec };
-    // Upload photo to Cloudinary if it's a local base64 image
     if (payload.print && payload.print.startsWith('data:')) {
-      setSS('busy', 'Uploading photo...');
+      setSS('busy', 'Uploading photo for ' + (rec.itemName||'item') + '...');
       try {
-        payload.print = await uploadToCloudinary(payload.print);
-        // Update local record with Cloudinary URL
+        const filename = 'print_' + rec.id + '_' + Date.now() + '.jpg';
+        payload.print = await uploadToCloudinary(payload.print, filename);
         const recs = getRecs();
         const updated = recs.map(r => r.id === rec.id ? { ...r, print: payload.print } : r);
         saveRecs(updated);
