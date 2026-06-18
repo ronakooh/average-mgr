@@ -266,6 +266,12 @@ select option { background: var(--card); }
 .lock-err { font-size: 12px; color: var(--danger); min-height: 18px; margin-top: 8px; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
+/* ── ITEM CARD ── */
+.item-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 12px; position: relative; }
+.item-card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-light); }
+.item-card-title { font-size: 13px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+.item-num { width: 22px; height: 22px; background: var(--accent); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+
 /* MOBILE NAV */
 .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); z-index: 200; padding: 6px 0 max(6px,env(safe-area-inset-bottom)); }
 .mobile-nav-inner { display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; padding: 0 4px; }
@@ -341,8 +347,10 @@ select option { background: var(--card); }
     <div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div>
   </div>
   <div id="editBanner" style="display:none"></div>
+
+  <!-- Shared details -->
   <div class="card">
-    <div class="card-label"><i class="ti ti-info-circle"></i> Basic details</div>
+    <div class="card-label"><i class="ti ti-info-circle"></i> Shared details</div>
     <div class="form-row inline">
       <div class="fg">
         <label class="flabel">Date Given (Col D)</label>
@@ -351,82 +359,31 @@ select option { background: var(--card); }
       <div class="fg">
         <label class="flabel">Quality Number (Col L)</label>
         <div class="suggest-wrap">
-          <input type="text" id="e-quality" placeholder="e.g. Q-001, Cotton-01..." autocomplete="off" oninput="showQualitySuggest()">
+          <input type="text" id="e-quality" placeholder="e.g. Q-001..." autocomplete="off" oninput="showQualitySuggest()">
           <div class="suggest-list" id="quality-suggest"></div>
         </div>
       </div>
     </div>
-    <div class="form-row">
-      <div class="fg">
-        <label class="flabel">Fabric Party (Col B)</label>
-        <div class="suggest-wrap">
-          <input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()">
-          <div class="suggest-list" id="party-suggest"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PRINT PHOTO -->
     <div class="fg">
-      <label class="flabel">Print Photo (Col C)</label>
-      <div class="photo-zone" onclick="document.getElementById('printPhoto').click()" id="photoZone">
-        <i class="ti ti-photo" style="font-size:24px;color:var(--text-3);display:block;margin-bottom:6px"></i>
-        <div style="font-size:13px;font-weight:500">Tap to attach print design photo</div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:3px">From camera or gallery</div>
-      </div>
-      <input type="file" id="printPhoto" accept="image/*" style="display:none" onchange="handlePhoto(this)">
-      <img id="photoPreview" class="photo-preview" style="display:none" alt="Print preview">
-      <button id="removePhoto" class="btn btn-ghost btn-sm" style="display:none;margin-top:6px" onclick="removePhoto()"><i class="ti ti-x"></i> Remove photo</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label"><i class="ti ti-calculator"></i> Fabric costing (Col E–G)</div>
-    <div class="form-row inline">
-      <div class="fg">
-        <label class="flabel">Metres (Col E)</label>
-        <input type="number" id="e-mtr" placeholder="0.00" min="0" step="0.01" oninput="calcG()">
-      </div>
-      <div class="fg">
-        <label class="flabel">Rate ₹/mtr (Col F)</label>
-        <input type="number" id="e-rate" placeholder="0.00" min="0" step="0.01" oninput="calcG()">
-      </div>
-    </div>
-    <div class="calc-row" id="calcG-row" style="display:none">
-      <div class="calc-item">
-        <div class="calc-item-label">Total Cost (Col G = E × F)</div>
-        <div class="calc-item-val" id="calc-g">—</div>
+      <label class="flabel">Fabric Party (Col B)</label>
+      <div class="suggest-wrap">
+        <input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()">
+        <div class="suggest-list" id="party-suggest"></div>
       </div>
     </div>
   </div>
 
-  <div class="card" style="border: 1px dashed var(--border); background: rgba(255,255,255,0.5);">
-    <div class="card-label" style="color:var(--gold)"><i class="ti ti-clock"></i> Production details — fill later (Col H & I)</div>
-    <div class="form-row inline">
-      <div class="fg">
-        <label class="flabel">Production Pcs (Col H)</label>
-        <input type="number" id="e-pcs" placeholder="Fill later..." min="0" oninput="calcJK()">
-      </div>
-      <div class="fg">
-        <label class="flabel">Stitcher Avg/pcs (Col I)</label>
-        <input type="number" id="e-stitch" placeholder="Fill later..." min="0" step="0.01" oninput="calcJK()">
-      </div>
-    </div>
-    <div class="calc-row" id="calcJK-row" style="display:none; background: var(--gold-dim); border-color: rgba(181,134,43,0.2);">
-      <div class="calc-item">
-        <div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (Col J = E÷H)</div>
-        <div class="calc-item-val" id="calc-j">—</div>
-      </div>
-      <div class="calc-item">
-        <div class="calc-item-label" style="color:var(--gold)">Fabric Cost/Pcs (Col K = G÷H)</div>
-        <div class="calc-item-val" id="calc-k">—</div>
-      </div>
-    </div>
-  </div>
+  <!-- Items container -->
+  <div id="items-container"></div>
+
+  <!-- Add item button -->
+  <button class="btn btn-ghost" onclick="addItem()" style="width:100%;margin-bottom:14px;border-style:dashed;padding:12px">
+    <i class="ti ti-plus"></i> Add another item (e.g. Pant, Dupatta)
+  </button>
 
   <div style="display:flex;gap:10px;justify-content:flex-end">
     <button class="btn btn-ghost" onclick="resetEntry()">Clear</button>
-    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save Entry</button>
+    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save All Items</button>
   </div>
 </div>
 
@@ -581,66 +538,10 @@ function setMNA(el) {
   el.classList.add('active');
 }
 
-// ── PHOTO ──
-let photoDataUrl = null;
-function handlePhoto(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    photoDataUrl = e.target.result;
-    const prev = document.getElementById('photoPreview');
-    prev.src = e.target.result; prev.style.display = 'block';
-    document.getElementById('removePhoto').style.display = 'inline-flex';
-    document.getElementById('photoZone').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
-function removePhoto() {
-  photoDataUrl = null;
-  document.getElementById('photoPreview').style.display = 'none';
-  document.getElementById('removePhoto').style.display = 'none';
-  document.getElementById('photoZone').style.display = 'block';
-  document.getElementById('printPhoto').value = '';
-}
-
-// ── CALCULATIONS ──
-function calcG() {
-  const mtr = parseFloat(document.getElementById('e-mtr').value) || 0;
-  const rate = parseFloat(document.getElementById('e-rate').value) || 0;
-  const g = mtr * rate;
-  const row = document.getElementById('calcG-row');
-  const el = document.getElementById('calc-g');
-  if (mtr && rate) {
-    el.textContent = '₹' + g.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
-    row.style.display = 'flex';
-  } else {
-    row.style.display = 'none';
-  }
-  calcJK();
-}
-
-function calcJK() {
-  const mtr = parseFloat(document.getElementById('e-mtr').value) || 0;
-  const rate = parseFloat(document.getElementById('e-rate').value) || 0;
-  const pcs = parseFloat(document.getElementById('e-pcs').value) || 0;
-  const g = mtr * rate;
-  const row = document.getElementById('calcJK-row');
-  if (pcs > 0) {
-    const j = mtr / pcs;
-    const k = g / pcs;
-    document.getElementById('calc-j').textContent = j.toFixed(4) + ' mtr';
-    document.getElementById('calc-k').textContent = '₹' + k.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
-    row.style.display = 'flex';
-  } else {
-    row.style.display = 'none';
-  }
-}
-
 // ── SUGGESTIONS ──
 function getUnique(field) {
   return [...new Set(getRecs().map(r => r[field]).filter(Boolean))].sort();
 }
-
 function showSuggest(inputId, listId, values) {
   const val = document.getElementById(inputId).value.trim().toLowerCase();
   const list = document.getElementById(listId);
@@ -650,300 +551,243 @@ function showSuggest(inputId, listId, values) {
   if (!matches.length) { list.style.display = 'none'; return; }
   matches.forEach(v => {
     const el = document.createElement('div');
-    el.className = 'suggest-item';
-    el.textContent = v;
-    el.onmousedown = e => {
-      e.preventDefault();
-      document.getElementById(inputId).value = v;
-      list.style.display = 'none';
-    };
+    el.className = 'suggest-item'; el.textContent = v;
+    el.onmousedown = e => { e.preventDefault(); document.getElementById(inputId).value = v; list.style.display = 'none'; };
     list.appendChild(el);
   });
   list.style.display = 'block';
 }
-
 function showQualitySuggest() { showSuggest('e-quality', 'quality-suggest', getUnique('quality')); }
 function showPartySuggest() { showSuggest('e-party', 'party-suggest', getUnique('party')); }
-
-['e-quality','e-party'].forEach(id => {
-  document.getElementById(id).addEventListener('blur', () => {
-    setTimeout(() => { document.querySelectorAll('.suggest-list').forEach(l => l.style.display = 'none'); }, 150);
+function rewireBlur() {
+  ['e-quality','e-party'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', () => setTimeout(() => document.querySelectorAll('.suggest-list').forEach(l => l.style.display='none'), 150));
   });
-});
+}
 
-// ── ENTRY ──
-let editingId = null;
+// ── MULTI-ITEM ENTRY ──
+let editingGroupId = null;
+let itemCount = 0;
+const itemPhotos = {};
 
-function saveEntry() {
+function addItem(prefill) {
+  itemCount++;
+  const idx = itemCount;
+  const container = document.getElementById('items-container');
+  const card = document.createElement('div');
+  card.className = 'item-card';
+  card.id = 'item-card-' + idx;
+  card.innerHTML =
+    '<div class="item-card-hd">' +
+      '<div class="item-card-title">' +
+        '<div class="item-num">' + idx + '</div>' +
+        '<input type="text" id="item-name-' + idx + '" placeholder="Item name (e.g. Kurta, Pant...)" value="' + (prefill&&prefill.itemName||'') + '" style="border:none;outline:none;font-size:13px;font-weight:600;color:var(--accent);background:transparent;min-width:160px;font-family:var(--font)">' +
+      '</div>' +
+      (idx > 1 ? '<button class="btn btn-danger btn-sm" onclick="removeItem(' + idx + ')"><i class="ti ti-x"></i> Remove</button>' : '') +
+    '</div>' +
+    '<div class="fg">' +
+      '<label class="flabel">Print Photo (Col C)</label>' +
+      '<div class="photo-zone" onclick="document.getElementById(\'photo-input-' + idx + '\').click()" id="photo-zone-' + idx + '" style="padding:12px">' +
+        '<i class="ti ti-photo" style="font-size:20px;color:var(--text-3);display:block;margin-bottom:4px"></i>' +
+        '<div style="font-size:12px;font-weight:500">Attach print photo</div>' +
+      '</div>' +
+      '<input type="file" id="photo-input-' + idx + '" accept="image/*" style="display:none" onchange="handleItemPhoto(this,' + idx + ')">' +
+      '<img id="photo-preview-' + idx + '" class="photo-preview" style="display:none;max-height:120px" alt="">' +
+      '<button id="photo-remove-' + idx + '" class="btn btn-ghost btn-sm" style="display:none;margin-top:4px" onclick="removeItemPhoto(' + idx + ')"><i class="ti ti-x"></i> Remove photo</button>' +
+    '</div>' +
+    '<div class="form-row inline" style="margin-top:10px">' +
+      '<div class="fg"><label class="flabel">Metres (Col E)</label><input type="number" id="item-mtr-' + idx + '" placeholder="0.00" min="0" step="0.01" value="' + (prefill&&prefill.mtr||'') + '" oninput="calcItem(' + idx + ')"></div>' +
+      '<div class="fg"><label class="flabel">Rate ₹/mtr (Col F)</label><input type="number" id="item-rate-' + idx + '" placeholder="0.00" min="0" step="0.01" value="' + (prefill&&prefill.rate||'') + '" oninput="calcItem(' + idx + ')"></div>' +
+    '</div>' +
+    '<div class="calc-row" id="item-calcg-' + idx + '" style="display:none"><div class="calc-item"><div class="calc-item-label">Total Cost (G = E×F)</div><div class="calc-item-val" id="item-g-' + idx + '">—</div></div></div>' +
+    '<div class="card" style="border:1px dashed var(--border);background:rgba(255,255,255,0.5);margin-top:12px;padding:14px 16px">' +
+      '<div class="card-label" style="color:var(--gold);margin-bottom:10px"><i class="ti ti-clock"></i> Production — fill later</div>' +
+      '<div class="form-row inline">' +
+        '<div class="fg"><label class="flabel">Pcs (Col H)</label><input type="number" id="item-pcs-' + idx + '" placeholder="Later..." min="0" value="' + (prefill&&prefill.pcs||'') + '" oninput="calcItem(' + idx + ')"></div>' +
+        '<div class="fg"><label class="flabel">Stitch Avg (Col I)</label><input type="number" id="item-stitch-' + idx + '" placeholder="Later..." min="0" step="0.01" value="' + (prefill&&prefill.stitch||'') + '"></div>' +
+      '</div>' +
+      '<div class="calc-row" id="item-calcjk-' + idx + '" style="display:none;background:var(--gold-dim);border-color:rgba(181,134,43,0.2)">' +
+        '<div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (J)</div><div class="calc-item-val" id="item-j-' + idx + '">—</div></div>' +
+        '<div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Cost/Pcs (K)</div><div class="calc-item-val" id="item-k-' + idx + '">—</div></div>' +
+      '</div>' +
+    '</div>';
+  container.appendChild(card);
+  if (prefill && prefill.print) {
+    itemPhotos[idx] = prefill.print;
+    const prev = document.getElementById('photo-preview-' + idx);
+    prev.src = prefill.print; prev.style.display = 'block';
+    document.getElementById('photo-remove-' + idx).style.display = 'inline-flex';
+    document.getElementById('photo-zone-' + idx).style.display = 'none';
+  }
+  if (prefill && prefill.mtr && prefill.rate) calcItem(idx);
+}
+
+function removeItem(idx) {
+  const card = document.getElementById('item-card-' + idx);
+  if (card) card.remove();
+  delete itemPhotos[idx];
+}
+
+function handleItemPhoto(input, idx) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    itemPhotos[idx] = e.target.result;
+    const prev = document.getElementById('photo-preview-' + idx);
+    prev.src = e.target.result; prev.style.display = 'block';
+    document.getElementById('photo-remove-' + idx).style.display = 'inline-flex';
+    document.getElementById('photo-zone-' + idx).style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeItemPhoto(idx) {
+  delete itemPhotos[idx];
+  document.getElementById('photo-preview-' + idx).style.display = 'none';
+  document.getElementById('photo-remove-' + idx).style.display = 'none';
+  document.getElementById('photo-zone-' + idx).style.display = 'block';
+  document.getElementById('photo-input-' + idx).value = '';
+}
+
+function calcItem(idx) {
+  const mtr = parseFloat(document.getElementById('item-mtr-' + idx).value) || 0;
+  const rate = parseFloat(document.getElementById('item-rate-' + idx).value) || 0;
+  const pcs = parseFloat(document.getElementById('item-pcs-' + idx).value) || 0;
+  const g = mtr * rate;
+  const gc = document.getElementById('item-calcg-' + idx);
+  if (mtr && rate) { document.getElementById('item-g-' + idx).textContent = '₹' + g.toLocaleString('en-IN',{maximumFractionDigits:2}); gc.style.display = 'flex'; }
+  else gc.style.display = 'none';
+  const jkc = document.getElementById('item-calcjk-' + idx);
+  if (pcs > 0) {
+    document.getElementById('item-j-' + idx).textContent = (mtr/pcs).toFixed(4) + ' mtr';
+    document.getElementById('item-k-' + idx).textContent = '₹' + (g/pcs).toFixed(2);
+    jkc.style.display = 'flex';
+  } else jkc.style.display = 'none';
+}
+
+function getItemIndices() {
+  return [...document.querySelectorAll('.item-card')].map(c => parseInt(c.id.replace('item-card-','')));
+}
+
+async function saveEntry() {
   const date = document.getElementById('e-date').value;
   const quality = document.getElementById('e-quality').value.trim();
   const party = document.getElementById('e-party').value.trim();
-  const mtr = parseFloat(document.getElementById('e-mtr').value) || 0;
-  const rate = parseFloat(document.getElementById('e-rate').value) || 0;
-  const pcs = parseFloat(document.getElementById('e-pcs').value) || null;
-  const stitch = parseFloat(document.getElementById('e-stitch').value) || null;
-
   if (!party) { toast('Please enter Fabric Party (Col B)'); return; }
-  if (!mtr) { toast('Please enter Metres (Col E)'); return; }
-  if (!rate) { toast('Please enter Rate (Col F)'); return; }
-
-  const g = mtr * rate;
-  const j = pcs ? mtr / pcs : null;
-  const k = pcs ? g / pcs : null;
-
-  const isEdit = !!editingId;
-  const rec = {
-    id: editingId || Date.now(),
-    date, quality, party,
-    print: photoDataUrl,
-    mtr, rate,
-    totalCost: g,
-    pcs, stitch,
-    avgMtrPcs: j,
-    fabricCostPcs: k
-  };
-
-  let recs = getRecs();
-  if (isEdit) {
-    recs = recs.map(r => r.id === rec.id ? rec : r);
-  } else {
-    recs.push(rec);
+  const indices = getItemIndices();
+  if (!indices.length) { toast('Add at least one item'); return; }
+  for (const idx of indices) {
+    const mtr = parseFloat(document.getElementById('item-mtr-' + idx).value) || 0;
+    const rate = parseFloat(document.getElementById('item-rate-' + idx).value) || 0;
+    const name = document.getElementById('item-name-' + idx).value.trim() || 'Item ' + idx;
+    if (!mtr || !rate) { toast('Please enter Metres and Rate for ' + name); return; }
   }
+  const groupId = editingGroupId || String(Date.now());
+  const isEdit = !!editingGroupId;
+  const savedRecs = [];
+  setSS('busy', 'Saving...');
+  for (let i = 0; i < indices.length; i++) {
+    const idx = indices[i];
+    const mtr = parseFloat(document.getElementById('item-mtr-' + idx).value) || 0;
+    const rate = parseFloat(document.getElementById('item-rate-' + idx).value) || 0;
+    const pcs = parseFloat(document.getElementById('item-pcs-' + idx).value) || null;
+    const stitch = parseFloat(document.getElementById('item-stitch-' + idx).value) || null;
+    const itemName = document.getElementById('item-name-' + idx).value.trim() || 'Item ' + (i+1);
+    const g = mtr * rate;
+    const j = pcs ? mtr/pcs : null;
+    const k = pcs ? g/pcs : null;
+    const recId = parseInt(groupId + '' + String(i+1).padStart(2,'0'));
+    savedRecs.push({ id: recId, groupId, date, quality, party, itemName, print: itemPhotos[idx]||null, mtr, rate, totalCost: g, pcs, stitch, avgMtrPcs: j, fabricCostPcs: k });
+  }
+  let recs = getRecs();
+  if (isEdit) recs = recs.filter(r => String(r.groupId) !== groupId);
+  recs.push(...savedRecs);
   saveRecs(recs);
-  editingId = null;
-  syncToSheet(isEdit ? 'update' : 'insert', rec);
-  toast('Entry saved!');
-  showSaveSuccess(rec);
-}
-
-function showSaveSuccess(rec) {
+  editingGroupId = null;
+  for (const rec of savedRecs) await syncToSheet(isEdit ? 'update' : 'insert', rec);
+  const totalCost = savedRecs.reduce((s,r) => s + r.totalCost, 0);
+  const hasPending = savedRecs.some(r => !r.pcs);
   const tab = document.getElementById('tab-entry');
-  tab.innerHTML = `
-    <div style="text-align:center;padding:40px 20px">
-      <div style="width:56px;height:56px;background:var(--success-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:var(--success)"><i class="ti ti-check"></i></div>
-      <div style="font-family:var(--display);font-size:20px;margin-bottom:6px">Entry saved!</div>
-      <div style="font-size:13px;color:var(--text-2);margin-bottom:4px">${rec.party}${rec.quality ? ' · ' + rec.quality : ''}</div>
-      <div style="font-family:var(--mono);font-size:18px;color:var(--accent);margin-bottom:24px">₹${rec.totalCost.toLocaleString('en-IN',{maximumFractionDigits:2})}</div>
-      ${!rec.pcs ? '<div style="background:var(--gold-dim);border:1px solid rgba(181,134,43,0.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:20px;display:inline-block"><i class="ti ti-clock" style="vertical-align:-2px;margin-right:6px"></i>Production details (Col H & I) pending — edit later</div>' : ''}
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="switchTab('records');setMNA(document.querySelectorAll('.mni')[1])"><i class="ti ti-table"></i> View Records</button>
-        <button class="btn btn-ghost" onclick="resetEntryFull()"><i class="ti ti-plus"></i> Add Another</button>
-      </div>
-    </div>`;
+  tab.innerHTML =
+    '<div style="text-align:center;padding:40px 20px">' +
+      '<div style="width:56px;height:56px;background:var(--success-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:var(--success)"><i class="ti ti-check"></i></div>' +
+      '<div style="font-family:var(--display);font-size:20px;margin-bottom:6px">' + savedRecs.length + ' item' + (savedRecs.length>1?'s':'') + ' saved!</div>' +
+      '<div style="font-size:13px;color:var(--text-2);margin-bottom:4px">' + party + (quality?' · '+quality:'') + '</div>' +
+      '<div style="font-family:var(--mono);font-size:18px;color:var(--accent);margin-bottom:16px">₹' + totalCost.toLocaleString('en-IN',{maximumFractionDigits:2}) + '</div>' +
+      (hasPending ? '<div style="background:var(--gold-dim);border:1px solid rgba(181,134,43,0.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:16px;display:inline-block"><i class="ti ti-clock" style="vertical-align:-2px;margin-right:6px"></i>Production details pending — edit records later</div>' : '') +
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+        '<button class="btn btn-primary" onclick="switchTab(\'records\');setMNA(document.querySelectorAll(\'.mni\')[1])"><i class="ti ti-table"></i> View Records</button>' +
+        '<button class="btn btn-ghost" onclick="resetEntryFull()"><i class="ti ti-plus"></i> Add Another</button>' +
+      '</div>' +
+    '</div>';
 }
 
 function resetEntry() {
-  ['e-date','e-quality','e-party','e-mtr','e-rate','e-pcs','e-stitch'].forEach(id => document.getElementById(id).value = '');
-  removePhoto();
-  document.getElementById('calcG-row').style.display = 'none';
-  document.getElementById('calcJK-row').style.display = 'none';
-  editingId = null;
-  document.getElementById('editBanner').style.display = 'none';
+  ['e-date','e-quality','e-party'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('items-container').innerHTML = '';
+  Object.keys(itemPhotos).forEach(k => delete itemPhotos[k]);
+  itemCount = 0;
+  editingGroupId = null;
+  const b = document.getElementById('editBanner'); if(b) b.style.display = 'none';
+  addItem();
+}
+
+function buildEntryHTML() {
+  return '<div class="page-hd"><div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div></div>' +
+    '<div id="editBanner" style="display:none"></div>' +
+    '<div class="card">' +
+      '<div class="card-label"><i class="ti ti-info-circle"></i> Shared details</div>' +
+      '<div class="form-row inline">' +
+        '<div class="fg"><label class="flabel">Date Given (Col D)</label><input type="date" id="e-date"></div>' +
+        '<div class="fg"><label class="flabel">Quality Number (Col L)</label><div class="suggest-wrap"><input type="text" id="e-quality" placeholder="e.g. Q-001..." autocomplete="off" oninput="showQualitySuggest()"><div class="suggest-list" id="quality-suggest"></div></div></div>' +
+      '</div>' +
+      '<div class="fg"><label class="flabel">Fabric Party (Col B)</label><div class="suggest-wrap"><input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()"><div class="suggest-list" id="party-suggest"></div></div></div>' +
+    '</div>' +
+    '<div id="items-container"></div>' +
+    '<button class="btn btn-ghost" onclick="addItem()" style="width:100%;margin-bottom:14px;border-style:dashed;padding:12px"><i class="ti ti-plus"></i> Add another item (e.g. Pant, Dupatta)</button>' +
+    '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+      '<button class="btn btn-ghost" onclick="resetEntry()">Clear</button>' +
+      '<button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save All Items</button>' +
+    '</div>';
 }
 
 function resetEntryFull() {
-  // Don't reset editingId here — editRec sets it after calling this
-  const tab = document.getElementById('tab-entry');
-  tab.innerHTML = `
-  <div class="page-hd"><div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div></div>
-  <div id="editBanner" style="display:none"></div>
-  <div class="card">
-    <div class="card-label"><i class="ti ti-info-circle"></i> Basic details</div>
-    <div class="form-row inline">
-      <div class="fg"><label class="flabel">Date Given (Col D)</label><input type="date" id="e-date"></div>
-      <div class="fg"><label class="flabel">Quality Number (Col L)</label><div class="suggest-wrap"><input type="text" id="e-quality" placeholder="e.g. Q-001..." autocomplete="off" oninput="showQualitySuggest()"><div class="suggest-list" id="quality-suggest"></div></div></div>
-    </div>
-    <div class="form-row"><div class="fg"><label class="flabel">Fabric Party (Col B)</label><div class="suggest-wrap"><input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()"><div class="suggest-list" id="party-suggest"></div></div></div></div>
-    <div class="fg">
-      <label class="flabel">Print Photo (Col C)</label>
-      <div class="photo-zone" onclick="document.getElementById('printPhoto').click()" id="photoZone"><i class="ti ti-photo" style="font-size:24px;color:var(--text-3);display:block;margin-bottom:6px"></i><div style="font-size:13px;font-weight:500">Tap to attach print design photo</div><div style="font-size:11px;color:var(--text-3);margin-top:3px">From camera or gallery</div></div>
-      <input type="file" id="printPhoto" accept="image/*" style="display:none" onchange="handlePhoto(this)">
-      <img id="photoPreview" class="photo-preview" style="display:none" alt="Print preview">
-      <button id="removePhoto" class="btn btn-ghost btn-sm" style="display:none;margin-top:6px" onclick="removePhoto()"><i class="ti ti-x"></i> Remove photo</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-label"><i class="ti ti-calculator"></i> Fabric costing (Col E–G)</div>
-    <div class="form-row inline">
-      <div class="fg"><label class="flabel">Metres (Col E)</label><input type="number" id="e-mtr" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
-      <div class="fg"><label class="flabel">Rate ₹/mtr (Col F)</label><input type="number" id="e-rate" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
-    </div>
-    <div class="calc-row" id="calcG-row" style="display:none"><div class="calc-item"><div class="calc-item-label">Total Cost (Col G = E × F)</div><div class="calc-item-val" id="calc-g">—</div></div></div>
-  </div>
-  <div class="card" style="border:1px dashed var(--border);background:rgba(255,255,255,0.5)">
-    <div class="card-label" style="color:var(--gold)"><i class="ti ti-clock"></i> Production details — fill later (Col H & I)</div>
-    <div class="form-row inline">
-      <div class="fg"><label class="flabel">Production Pcs (Col H)</label><input type="number" id="e-pcs" placeholder="Fill later..." min="0" oninput="calcJK()"></div>
-      <div class="fg"><label class="flabel">Stitcher Avg/pcs (Col I)</label><input type="number" id="e-stitch" placeholder="Fill later..." min="0" step="0.01" oninput="calcJK()"></div>
-    </div>
-    <div class="calc-row" id="calcJK-row" style="display:none;background:var(--gold-dim);border-color:rgba(181,134,43,0.2)">
-      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (Col J = E÷H)</div><div class="calc-item-val" id="calc-j">—</div></div>
-      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Fabric Cost/Pcs (Col K = G÷H)</div><div class="calc-item-val" id="calc-k">—</div></div>
-    </div>
-  </div>
-  <div style="display:flex;gap:10px;justify-content:flex-end">
-    <button class="btn btn-ghost" onclick="editingId=null;resetEntry()">Clear</button>
-    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save Entry</button>
-  </div>`;
-  photoDataUrl = null;
+  itemCount = 0;
+  Object.keys(itemPhotos).forEach(k => delete itemPhotos[k]);
+  document.getElementById('tab-entry').innerHTML = buildEntryHTML();
   document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
   rewireBlur();
-}
-
-function rewireBlur() {
-  ['e-quality','e-party'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('blur', () => setTimeout(() => document.querySelectorAll('.suggest-list').forEach(l => l.style.display='none'), 150));
-  });
+  addItem();
 }
 
 // ── EDIT ──
 function editRec(id) {
   const r = getRecs().find(x => x.id === id); if (!r) return;
-  resetEntryFull(); // rebuild DOM first
-  editingId = id;  // set AFTER resetEntryFull so it's not cleared
+  const groupId = String(r.groupId || r.id);
+  const groupRecs = getRecs().filter(x => String(x.groupId||x.id) === groupId);
+  itemCount = 0;
+  Object.keys(itemPhotos).forEach(k => delete itemPhotos[k]);
+  document.getElementById('tab-entry').innerHTML = buildEntryHTML();
+  editingGroupId = groupId;
   switchTab('entry');
   setTimeout(() => {
     document.getElementById('e-date').value = r.date || '';
     document.getElementById('e-quality').value = r.quality || '';
     document.getElementById('e-party').value = r.party || '';
-    document.getElementById('e-mtr').value = r.mtr || '';
-    document.getElementById('e-rate').value = r.rate || '';
-    document.getElementById('e-pcs').value = r.pcs || '';
-    document.getElementById('e-stitch').value = r.stitch || '';
-    if (r.print) {
-      photoDataUrl = r.print;
-      const prev = document.getElementById('photoPreview');
-      prev.src = r.print; prev.style.display = 'block';
-      document.getElementById('removePhoto').style.display = 'inline-flex';
-      document.getElementById('photoZone').style.display = 'none';
-    }
-    calcG(); calcJK();
+    document.getElementById('items-container').innerHTML = '';
+    itemCount = 0;
+    groupRecs.forEach(gr => addItem({ itemName: gr.itemName||'', mtr: gr.mtr, rate: gr.rate, pcs: gr.pcs, stitch: gr.stitch, print: gr.print }));
     const banner = document.getElementById('editBanner');
-    banner.innerHTML = `<div class="edit-banner"><span><i class="ti ti-edit" style="vertical-align:-2px;margin-right:6px"></i>Editing — ${r.party}${r.date ? ' · ' + r.date : ''}</span><button class="btn btn-ghost btn-sm" onclick="cancelEdit()"><i class="ti ti-x"></i> Cancel</button></div>`;
+    banner.innerHTML = '<div class="edit-banner"><span><i class="ti ti-edit" style="vertical-align:-2px;margin-right:6px"></i>Editing — ' + r.party + (r.date?' · '+r.date:'') + '</span><button class="btn btn-ghost btn-sm" onclick="cancelEdit()"><i class="ti ti-x"></i> Cancel</button></div>';
     banner.style.display = 'block';
+    rewireBlur();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, 60);
+  }, 80);
 }
 
 function cancelEdit() {
-  editingId = null;
-  resetEntryFull();
-  toast('Edit cancelled — no changes made');
-}
-
-function showSaveSuccess(rec) {
-  const tab = document.getElementById('tab-entry');
-  tab.innerHTML = `
-    <div style="text-align:center;padding:40px 20px">
-      <div style="width:56px;height:56px;background:var(--success-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:var(--success)"><i class="ti ti-check"></i></div>
-      <div style="font-family:var(--display);font-size:20px;margin-bottom:6px">Entry saved!</div>
-      <div style="font-size:13px;color:var(--text-2);margin-bottom:4px">${rec.party}${rec.quality ? ' · ' + rec.quality : ''}</div>
-      <div style="font-family:var(--mono);font-size:18px;color:var(--accent);margin-bottom:24px">₹${rec.totalCost.toLocaleString('en-IN',{maximumFractionDigits:2})}</div>
-      ${!rec.pcs ? '<div style="background:var(--gold-dim);border:1px solid rgba(181,134,43,0.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:20px;display:inline-block"><i class="ti ti-clock" style="vertical-align:-2px;margin-right:6px"></i>Production details (Col H & I) pending — edit later</div>' : ''}
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="switchTab('records');setMNA(document.querySelectorAll('.mni')[1])"><i class="ti ti-table"></i> View Records</button>
-        <button class="btn btn-ghost" onclick="resetEntryFull()"><i class="ti ti-plus"></i> Add Another</button>
-      </div>
-    </div>`;
-}
-
-function resetEntry() {
-  ['e-date','e-quality','e-party','e-mtr','e-rate','e-pcs','e-stitch'].forEach(id => document.getElementById(id).value = '');
-  removePhoto();
-  document.getElementById('calcG-row').style.display = 'none';
-  document.getElementById('calcJK-row').style.display = 'none';
-  editingId = null;
-  document.getElementById('editBanner').style.display = 'none';
-}
-
-function resetEntryFull() {
-  // NOTE: do NOT reset editingId here — editRec sets it after calling this
-  const tab = document.getElementById('tab-entry');
-  tab.innerHTML = `
-  <div class="page-hd"><div><div class="page-title">New Entry</div><div class="page-sub">Add fabric costing record</div></div></div>
-  <div id="editBanner" style="display:none"></div>
-  <div class="card">
-    <div class="card-label"><i class="ti ti-info-circle"></i> Basic details</div>
-    <div class="form-row inline">
-      <div class="fg"><label class="flabel">Date Given (Col D)</label><input type="date" id="e-date"></div>
-      <div class="fg"><label class="flabel">Quality Number (Col L)</label><div class="suggest-wrap"><input type="text" id="e-quality" placeholder="e.g. Q-001..." autocomplete="off" oninput="showQualitySuggest()"><div class="suggest-list" id="quality-suggest"></div></div></div>
-    </div>
-    <div class="form-row"><div class="fg"><label class="flabel">Fabric Party (Col B)</label><div class="suggest-wrap"><input type="text" id="e-party" placeholder="Supplier name..." autocomplete="off" oninput="showPartySuggest()"><div class="suggest-list" id="party-suggest"></div></div></div></div>
-    <div class="fg">
-      <label class="flabel">Print Photo (Col C)</label>
-      <div class="photo-zone" onclick="document.getElementById('printPhoto').click()" id="photoZone"><i class="ti ti-photo" style="font-size:24px;color:var(--text-3);display:block;margin-bottom:6px"></i><div style="font-size:13px;font-weight:500">Tap to attach print design photo</div><div style="font-size:11px;color:var(--text-3);margin-top:3px">From camera or gallery</div></div>
-      <input type="file" id="printPhoto" accept="image/*" style="display:none" onchange="handlePhoto(this)">
-      <img id="photoPreview" class="photo-preview" style="display:none" alt="Print preview">
-      <button id="removePhoto" class="btn btn-ghost btn-sm" style="display:none;margin-top:6px" onclick="removePhoto()"><i class="ti ti-x"></i> Remove photo</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-label"><i class="ti ti-calculator"></i> Fabric costing (Col E–G)</div>
-    <div class="form-row inline">
-      <div class="fg"><label class="flabel">Metres (Col E)</label><input type="number" id="e-mtr" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
-      <div class="fg"><label class="flabel">Rate ₹/mtr (Col F)</label><input type="number" id="e-rate" placeholder="0.00" min="0" step="0.01" oninput="calcG()"></div>
-    </div>
-    <div class="calc-row" id="calcG-row" style="display:none"><div class="calc-item"><div class="calc-item-label">Total Cost (Col G = E × F)</div><div class="calc-item-val" id="calc-g">—</div></div></div>
-  </div>
-  <div class="card" style="border:1px dashed var(--border);background:rgba(255,255,255,0.5)">
-    <div class="card-label" style="color:var(--gold)"><i class="ti ti-clock"></i> Production details — fill later (Col H & I)</div>
-    <div class="form-row inline">
-      <div class="fg"><label class="flabel">Production Pcs (Col H)</label><input type="number" id="e-pcs" placeholder="Fill later..." min="0" oninput="calcJK()"></div>
-      <div class="fg"><label class="flabel">Stitcher Avg/pcs (Col I)</label><input type="number" id="e-stitch" placeholder="Fill later..." min="0" step="0.01" oninput="calcJK()"></div>
-    </div>
-    <div class="calc-row" id="calcJK-row" style="display:none;background:var(--gold-dim);border-color:rgba(181,134,43,0.2)">
-      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Avg Mtr/Pcs (Col J = E÷H)</div><div class="calc-item-val" id="calc-j">—</div></div>
-      <div class="calc-item"><div class="calc-item-label" style="color:var(--gold)">Fabric Cost/Pcs (Col K = G÷H)</div><div class="calc-item-val" id="calc-k">—</div></div>
-    </div>
-  </div>
-  <div style="display:flex;gap:10px;justify-content:flex-end">
-    <button class="btn btn-ghost" onclick="resetEntry()">Clear</button>
-    <button class="btn btn-primary" onclick="saveEntry()"><i class="ti ti-check"></i> Save Entry</button>
-  </div>`;
-  photoDataUrl = null;
-  document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
-  rewireBlur();
-}
-
-function rewireBlur() {
-  ['e-quality','e-party'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('blur', () => setTimeout(() => document.querySelectorAll('.suggest-list').forEach(l => l.style.display='none'), 150));
-  });
-}
-
-// ── EDIT ──
-function editRec(id) {
-  const r = getRecs().find(x => x.id === id); if (!r) return;
-  resetEntryFull();    // rebuild DOM — does NOT clear editingId anymore
-  editingId = id;      // set AFTER rebuild
-  switchTab('entry');
-  setTimeout(() => {
-    document.getElementById('e-date').value = r.date || '';
-    document.getElementById('e-quality').value = r.quality || '';
-    document.getElementById('e-party').value = r.party || '';
-    document.getElementById('e-mtr').value = r.mtr || '';
-    document.getElementById('e-rate').value = r.rate || '';
-    document.getElementById('e-pcs').value = r.pcs || '';
-    document.getElementById('e-stitch').value = r.stitch || '';
-    if (r.print) {
-      photoDataUrl = r.print;
-      const prev = document.getElementById('photoPreview');
-      prev.src = r.print; prev.style.display = 'block';
-      document.getElementById('removePhoto').style.display = 'inline-flex';
-      document.getElementById('photoZone').style.display = 'none';
-    }
-    calcG(); calcJK();
-    const banner = document.getElementById('editBanner');
-    banner.innerHTML = `<div class="edit-banner"><span><i class="ti ti-edit" style="vertical-align:-2px;margin-right:6px"></i>Editing — ${r.party}${r.date ? ' · ' + r.date : ''}</span><button class="btn btn-ghost btn-sm" onclick="cancelEdit()"><i class="ti ti-x"></i> Cancel</button></div>`;
-    banner.style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, 60);
-}
-
-function cancelEdit() {
-  editingId = null;
+  editingGroupId = null;
   resetEntryFull();
   toast('Edit cancelled — no changes made');
 }
@@ -990,14 +834,14 @@ function renderRecords() {
   }
 
   const rows = recs.map(r => {
-    const complete = r.pcs && r.stitch;
     const photoCell = r.print
       ? `<img src="${r.print}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" onclick="viewRec(${r.id})" alt="Print">`
       : '<span style="color:var(--text-3);font-size:11px">—</span>';
     return `<tr>
       <td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap">${r.date||'—'}</td>
-      <td style="width:120px;font-weight:500;white-space:nowrap">${r.party||'—'}</td>
+      <td style="width:110px;font-weight:500;white-space:nowrap">${r.party||'—'}</td>
       <td style="width:90px;white-space:nowrap">${r.quality ? `<span class="tag tag-green">${r.quality}</span>` : '<span class="tag tag-grey">—</span>'}</td>
+      <td style="width:90px;font-size:12px;white-space:nowrap;color:var(--text-2)">${r.itemName||'—'}</td>
       <td style="width:50px">${photoCell}</td>
       <td style="width:70px;font-family:var(--mono);white-space:nowrap">${r.mtr?.toLocaleString('en-IN',{maximumFractionDigits:1})||'—'}</td>
       <td style="width:70px;font-family:var(--mono);white-space:nowrap">₹${r.rate||'—'}</td>
@@ -1011,7 +855,7 @@ function renderRecords() {
 
   document.getElementById('recordsTable').innerHTML = `<table class="tbl" style="table-layout:auto">
     <thead><tr>
-      <th>Date</th><th>Party (B)</th><th>Quality (L)</th><th>Print</th>
+      <th>Date</th><th>Party (B)</th><th>Quality (L)</th><th>Item</th><th>Print</th>
       <th>Mtr (E)</th><th>Rate (F)</th><th>Total Cost (G)</th>
       <th>Pcs (H)</th><th>Avg Mtr (J)</th><th>Cost/Pcs (K)</th><th></th>
     </tr></thead>
@@ -1062,12 +906,13 @@ function closeMenu() { document.querySelectorAll('.action-menu,.action-overlay')
 
 function viewRec(id) {
   const r = getRecs().find(x => x.id === id); if (!r) return;
-  document.getElementById('modalTitle').textContent = r.party + (r.date ? ' · ' + r.date : '');
+  document.getElementById('modalTitle').textContent = r.party + (r.itemName ? ' — ' + r.itemName : '') + (r.date ? ' · ' + r.date : '');
   let h = '';
   if (r.print) h += `<img src="${r.print}" class="modal-photo" alt="Print design">`;
   h += `<div class="detail-grid">
     <span class="dl">Date (D)</span><span class="dv" style="font-family:var(--mono)">${r.date||'—'}</span>
     <span class="dl">Party (B)</span><span class="dv" style="font-weight:500">${r.party||'—'}</span>
+    <span class="dl">Item</span><span class="dv">${r.itemName||'—'}</span>
     <span class="dl">Quality (L)</span><span class="dv">${r.quality ? `<span class="tag tag-green">${r.quality}</span>` : '—'}</span>
     <span class="dl">Metres (E)</span><span class="dv" style="font-family:var(--mono)">${r.mtr?.toLocaleString('en-IN',{maximumFractionDigits:2})||'—'} mtr</span>
     <span class="dl">Rate (F)</span><span class="dv" style="font-family:var(--mono)">₹${r.rate||'—'}/mtr</span>
@@ -1375,6 +1220,7 @@ function confirmClear() {
 function initApp() {
   document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
   rewireBlur();
+  addItem(); // add first item card
   if (SCRIPT_URL && !SCRIPT_URL.includes('PASTE')) loadFromSheet();
   else setSS('err', 'Sheet not configured — Settings to sync');
 }
