@@ -882,12 +882,12 @@ function renderRecords() {
       ? '<span class="tag tag-green">' + r.quality + '</span>'
       : '<span class="tag tag-grey">—</span>';
     const photoCell = r.print
-      ? '<img src="' + r.print + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" onclick="event.stopPropagation();viewRec(' + rid + ')" alt="Print">'
+      ? '<img src="' + r.print + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" class="photo-thumb" alt="Print">'
       : '<span style="color:var(--text-3);font-size:11px">—</span>';
     const pcsCell = r.pcs ? r.pcs : '<span class="pending">TBD</span>';
     const jCell = r.avgMtrPcs ? r.avgMtrPcs.toFixed(3) : '<span class="pending">TBD</span>';
     const kCell = r.fabricCostPcs ? '₹' + r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>';
-    return '<tr onclick="viewRec(' + rid + ')" style="cursor:pointer">'
+    return '<tr class="rec-row" data-id="' + String(r.id) + '" style="cursor:pointer">'
       + '<td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap">' + (r.date||'—') + '</td>'
       + '<td style="width:110px;font-weight:500;white-space:nowrap">' + (r.party||'—') + '</td>'
       + '<td style="width:90px;white-space:nowrap">' + qualityTag + '</td>'
@@ -899,7 +899,7 @@ function renderRecords() {
       + '<td style="width:70px;font-family:var(--mono);white-space:nowrap">' + pcsCell + '</td>'
       + '<td style="width:90px;font-family:var(--mono);white-space:nowrap">' + jCell + '</td>'
       + '<td style="min-width:100px;font-family:var(--mono);color:var(--gold);white-space:nowrap">' + kCell + '</td>'
-      + '<td style="width:44px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openMenu(' + rid + ',this)" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>'
+      + '<td style="width:44px"><button class="btn btn-ghost btn-sm menu-btn" data-id="' + String(r.id) + '" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>'
       + '</tr>';
   }).join('');
 
@@ -911,6 +911,18 @@ function renderRecords() {
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+
+  // Delegated click handlers — avoids all inline onclick + quoting issues
+  document.getElementById('recordsTable').addEventListener('click', function(e) {
+    const menuBtn = e.target.closest('.menu-btn');
+    if (menuBtn) {
+      e.stopPropagation();
+      openMenu(menuBtn.dataset.id, menuBtn);
+      return;
+    }
+    const row = e.target.closest('.rec-row');
+    if (row) viewRec(row.dataset.id);
+  }, { once: false });
 }
 
 function clearFilters() {
