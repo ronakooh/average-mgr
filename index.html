@@ -911,18 +911,6 @@ function renderRecords() {
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
-
-  // Delegated click handlers — avoids all inline onclick + quoting issues
-  document.getElementById('recordsTable').addEventListener('click', function(e) {
-    const menuBtn = e.target.closest('.menu-btn');
-    if (menuBtn) {
-      e.stopPropagation();
-      openMenu(menuBtn.dataset.id, menuBtn);
-      return;
-    }
-    const row = e.target.closest('.rec-row');
-    if (row) viewRec(row.dataset.id);
-  }, { once: false });
 }
 
 function clearFilters() {
@@ -1292,7 +1280,16 @@ function confirmClear() {
 function initApp() {
   document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
   rewireBlur();
-  addItem(); // add first item card
+  addItem();
+
+  // Single delegated listener for all record row clicks and menu buttons
+  document.getElementById('recordsTable').addEventListener('click', function(e) {
+    const btn = e.target.closest('.menu-btn');
+    if (btn) { e.stopPropagation(); openMenu(btn.dataset.id, btn); return; }
+    const row = e.target.closest('.rec-row');
+    if (row) viewRec(row.dataset.id);
+  });
+
   if (SCRIPT_URL && !SCRIPT_URL.includes('PASTE')) loadFromSheet();
   else setSS('err', 'Sheet not configured — Settings to sync');
 }
