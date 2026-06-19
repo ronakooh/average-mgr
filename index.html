@@ -686,6 +686,27 @@ async function saveEntry() {
   const groupId = editingGroupId || String(Date.now());
   const isEdit = !!editingGroupId;
   const savedRecs = [];
+  setSS('busy', 'Uploading photos...');
+
+  // Pre-upload all photos FIRST before building records
+  const uploadedPhotos = {};
+  for (let i = 0; i < indices.length; i++) {
+    const idx = indices[i];
+    const photo = itemPhotos[idx];
+    if (photo && photo.startsWith('data:')) {
+      try {
+        const filename = 'print_' + groupId + '_item' + (i+1) + '_' + idx + '.jpg';
+        setSS('busy', `Uploading photo ${i+1} of ${indices.length}...`);
+        uploadedPhotos[idx] = await uploadToCloudinary(photo, filename);
+      } catch(err) {
+        console.error('Photo upload failed for item', i+1, err);
+        uploadedPhotos[idx] = photo; // keep base64 if upload fails
+      }
+    } else if (photo) {
+      uploadedPhotos[idx] = photo; // already a URL
+    }
+  }
+
   setSS('busy', 'Saving...');
   for (let i = 0; i < indices.length; i++) {
     const idx = indices[i];
@@ -697,21 +718,26 @@ async function saveEntry() {
     const g = mtr * rate;
     const j = pcs ? mtr/pcs : null;
     const k = pcs ? g/pcs : null;
-    const recId = groupId + '_' + (i+1);  // string ID avoids integer overflow
-    savedRecs.push({ id: recId, groupId, date, quality, party, itemName, print: itemPhotos[idx]||null, mtr, rate, totalCost: g, pcs, stitch, avgMtrPcs: j, fabricCostPcs: k });
+    const recId = groupId + '_' + (i+1);
+    savedRecs.push({ id: recId, groupId, date, quality, party, itemName, print: uploadedPhotos[idx]||null, mtr, rate, totalCost: g, pcs, stitch, avgMtrPcs: j, fabricCostPcs: k });
   }
+
   let recs = getRecs();
   if (isEdit) recs = recs.filter(r => String(r.groupId) !== groupId);
   recs.push(...savedRecs);
   saveRecs(recs);
   editingGroupId = null;
 
-  // Sync items one by one — sequential to avoid Cloudinary race conditions
+  // Sync to sheet — photos already uploaded, no Cloudinary upload needed here
   for (let i = 0; i < savedRecs.length; i++) {
+    setSS('busy', `Syncing item ${i+1} of ${savedRecs.length}...`);
     const rec = savedRecs[i];
-    setSS('busy', `Saving item ${i+1} of ${savedRecs.length}...`);
-    await syncToSheet(isEdit ? 'update' : 'insert', rec);
+    const payload = { action: isEdit ? 'update' : 'insert', ...rec };
+    try {
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+    } catch(e) { console.error('Sync failed', e); }
   }
+  localStorage.setItem(SYNC_TS, Date.now());
   setSS('ok', 'Synced · ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}));
   const totalCost = savedRecs.reduce((s,r) => s + r.totalCost, 0);
   const hasPending = savedRecs.some(r => !r.pcs);
@@ -770,7 +796,7 @@ function resetEntryFull() {
 
 // ── EDIT ──
 function editRec(id) {
-  const r = getRecs().find(x => x.id === id); if (!r) return;
+  const r = getRecs().find(x => String(x.id) === String(id)); if (!r) return;
   const groupId = String(r.groupId || r.id);
   const groupRecs = getRecs().filter(x => String(x.groupId||x.id) === groupId);
   itemCount = 0;
@@ -841,8 +867,9 @@ function renderRecords() {
   }
 
   const rows = recs.map(r => {
+    const rid = JSON.stringify(String(r.id)); // safely quote string IDs
     const photoCell = r.print
-      ? `<img src="${r.print}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" onclick="viewRec(${r.id})" alt="Print">`
+      ? `<img src="${r.print}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" onclick="viewRec(${rid})" alt="Print">`
       : '<span style="color:var(--text-3);font-size:11px">—</span>';
     return `<tr>
       <td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap">${r.date||'—'}</td>
@@ -856,7 +883,7 @@ function renderRecords() {
       <td style="width:70px;font-family:var(--mono);white-space:nowrap">${r.pcs||'<span class="pending">TBD</span>'}</td>
       <td style="width:90px;font-family:var(--mono);white-space:nowrap">${r.avgMtrPcs?.toFixed(3)||'<span class="pending">TBD</span>'}</td>
       <td style="min-width:100px;font-family:var(--mono);color:var(--gold);white-space:nowrap">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>'}</td>
-      <td style="width:44px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${r.id},this)" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>
+      <td style="width:44px"><button class="btn btn-ghost btn-sm" onclick="openMenu(${rid},this)" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>
     </tr>`;
   }).join('');
 
@@ -912,7 +939,8 @@ function openMenu(id, btn) {
 function closeMenu() { document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove()); }
 
 function viewRec(id) {
-  const r = getRecs().find(x => x.id === id); if (!r) return;
+  const r = getRecs().find(x => String(x.id) === String(id)); if (!r) return;
+  const rid = JSON.stringify(String(r.id));
   document.getElementById('modalTitle').textContent = r.party + (r.itemName ? ' — ' + r.itemName : '') + (r.date ? ' · ' + r.date : '');
   let h = '';
   if (r.print) h += `<img src="${r.print}" class="modal-photo" alt="Print design">`;
@@ -933,9 +961,9 @@ function viewRec(id) {
     <span class="dl">Cost/Pcs (K)</span><span class="dv" style="font-family:var(--mono);color:var(--gold);font-weight:500">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span style="color:var(--gold)">TBD</span>'}</span>
   </div>`;
   h += `<div style="display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-    <button class="btn btn-primary" style="flex:1" onclick="closeModal();editRec(${id})"><i class="ti ti-edit"></i> Edit</button>
-    <button class="btn btn-ghost" onclick="closeModal();dupRec(${id})"><i class="ti ti-copy"></i> Duplicate</button>
-    <button class="btn btn-danger" onclick="closeModal();delRec(${id})"><i class="ti ti-trash"></i></button>
+    <button class="btn btn-primary" style="flex:1" onclick="closeModal();editRec(${rid})"><i class="ti ti-edit"></i> Edit</button>
+    <button class="btn btn-ghost" onclick="closeModal();dupRec(${rid})"><i class="ti ti-copy"></i> Duplicate</button>
+    <button class="btn btn-danger" onclick="closeModal();delRec(${rid})"><i class="ti ti-trash"></i></button>
   </div>`;
   document.getElementById('modalBody').innerHTML = h;
   document.getElementById('detailModal').classList.add('open');
@@ -946,15 +974,16 @@ document.getElementById('detailModal').addEventListener('click', e => { if (e.ta
 
 function delRec(id) {
   if (!confirm('Delete this entry?')) return;
-  const rec = getRecs().find(r => r.id === id);
-  saveRecs(getRecs().filter(r => r.id !== id));
-  if (rec) syncToSheet('delete', { id });
+  const rec = getRecs().find(r => String(r.id) === String(id));
+  saveRecs(getRecs().filter(r => String(r.id) !== String(id)));
+  if (rec) syncToSheet('delete', { id: String(id) });
   buildFilterDDs(); renderRecords(); toast('Deleted');
 }
 
 function dupRec(id) {
-  const r = getRecs().find(x => x.id === id); if (!r) return;
-  const copy = { ...r, id: Date.now(), date: new Date().toISOString().slice(0,10) };
+  const r = getRecs().find(x => String(x.id) === String(id)); if (!r) return;
+  const newId = String(Date.now()) + '_1';
+  const copy = { ...r, id: newId, groupId: String(Date.now()), date: new Date().toISOString().slice(0,10) };
   const recs = getRecs(); recs.push(copy); saveRecs(recs);
   syncToSheet('insert', copy);
   toast('Duplicated'); buildFilterDDs(); renderRecords();
