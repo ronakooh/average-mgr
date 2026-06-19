@@ -922,11 +922,12 @@ function openMenu(id, btn) {
   const menu = document.createElement('div');
   menu.className = 'action-menu';
   menu.style.cssText = 'position:fixed;z-index:9999';
+  const qid = JSON.stringify(String(id)); // safely quoted string ID
   menu.innerHTML = `
-    <button class="action-item" onclick="closeMenu();viewRec(${id})"><i class="ti ti-eye" style="color:var(--text-3)"></i> View details</button>
-    <button class="action-item" onclick="closeMenu();editRec(${id})"><i class="ti ti-edit" style="color:var(--accent)"></i> Edit</button>
-    <button class="action-item" onclick="closeMenu();dupRec(${id})"><i class="ti ti-copy" style="color:var(--info)"></i> Duplicate</button>
-    <button class="action-item danger" onclick="closeMenu();delRec(${id})"><i class="ti ti-trash"></i> Delete</button>`;
+    <button class="action-item" onclick="closeMenu();viewRec(${qid})"><i class="ti ti-eye" style="color:var(--text-3)"></i> View details</button>
+    <button class="action-item" onclick="closeMenu();editRec(${qid})"><i class="ti ti-edit" style="color:var(--accent)"></i> Edit</button>
+    <button class="action-item" onclick="closeMenu();dupRec(${qid})"><i class="ti ti-copy" style="color:var(--info)"></i> Duplicate</button>
+    <button class="action-item danger" onclick="closeMenu();delRec(${qid})"><i class="ti ti-trash"></i> Delete</button>`;
   document.body.appendChild(menu);
   const rect = btn.getBoundingClientRect();
   const mw = 180, mh = 180;
