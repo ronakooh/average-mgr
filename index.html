@@ -241,11 +241,10 @@ select option { background: var(--card); }
 .edit-banner { background: var(--gold-dim); border: 1px solid rgba(181,134,43,0.3); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--gold); }
 
 /* ACTION MENU */
-.action-menu { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 180px; overflow: hidden; }
-.action-overlay { position: fixed; inset: 0; z-index: 499; }
+.action-menu { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.18); min-width: 180px; overflow: hidden; position: fixed; z-index: 99999; }
 .action-item { display: flex; align-items: center; gap: 10px; padding: 13px 16px; font-size: 14px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: var(--font); color: var(--text); border-bottom: 1px solid var(--border-light); font-weight: 500; }
 .action-item:last-child { border-bottom: none; }
-.action-item:hover { background: var(--bg); }
+.action-item:hover, .action-item:active { background: var(--bg); }
 .action-item.danger { color: var(--danger); }
 
 /* EMPTY */
@@ -920,30 +919,51 @@ function exportCSV() {
 
 // ── ACTION MENU ──
 function openMenu(id, btn) {
-  document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove());
-  const overlay = document.createElement('div');
-  overlay.className = 'action-overlay';
-  overlay.onclick = () => document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove());
-  document.body.appendChild(overlay);
+  // Close any existing menus
+  document.querySelectorAll('.action-menu').forEach(e => e.remove());
+  document.removeEventListener('click', window._menuClose);
+
   const menu = document.createElement('div');
   menu.className = 'action-menu';
-  menu.style.cssText = 'position:fixed;z-index:9999';
-  const qid = JSON.stringify(String(id)); // safely quoted string ID
-  menu.innerHTML = `
-    <button class="action-item" onclick="closeMenu();viewRec(${qid})"><i class="ti ti-eye" style="color:var(--text-3)"></i> View details</button>
-    <button class="action-item" onclick="closeMenu();editRec(${qid})"><i class="ti ti-edit" style="color:var(--accent)"></i> Edit</button>
-    <button class="action-item" onclick="closeMenu();dupRec(${qid})"><i class="ti ti-copy" style="color:var(--info)"></i> Duplicate</button>
-    <button class="action-item danger" onclick="closeMenu();delRec(${qid})"><i class="ti ti-trash"></i> Delete</button>`;
-  document.body.appendChild(menu);
+  const qid = JSON.stringify(String(id));
+  menu.innerHTML =
+    '<button class="action-item" onclick="closeMenu();viewRec(' + qid + ')"><i class="ti ti-eye" style="color:var(--text-3)"></i> View details</button>' +
+    '<button class="action-item" onclick="closeMenu();editRec(' + qid + ')"><i class="ti ti-edit" style="color:var(--accent)"></i> Edit</button>' +
+    '<button class="action-item" onclick="closeMenu();dupRec(' + qid + ')"><i class="ti ti-copy" style="color:var(--info)"></i> Duplicate</button>' +
+    '<button class="action-item danger" onclick="closeMenu();delRec(' + qid + ')"><i class="ti ti-trash"></i> Delete</button>';
+
+  // Position relative to button
   const rect = btn.getBoundingClientRect();
-  const mw = 180, mh = 180;
-  let top = rect.bottom + 4, left = rect.right - mw;
-  if (top + mh > window.innerHeight) top = rect.top - mh - 4;
+  menu.style.cssText = 'position:fixed;z-index:99999;min-width:180px;';
+  document.body.appendChild(menu);
+
+  // Position after appending so we know menu dimensions
+  const mh = menu.offsetHeight || 180;
+  const mw = menu.offsetWidth || 180;
+  let top = rect.bottom + 4;
+  let left = rect.right - mw;
+  if (top + mh > window.innerHeight - 10) top = rect.top - mh - 4;
+  if (top < 10) top = 10;
   if (left < 8) left = 8;
   if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
-  menu.style.top = top + 'px'; menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
+
+  // Close on outside click
+  setTimeout(() => {
+    window._menuClose = function(e) {
+      if (!menu.contains(e.target)) {
+        closeMenu();
+      }
+    };
+    document.addEventListener('click', window._menuClose);
+  }, 10);
 }
-function closeMenu() { document.querySelectorAll('.action-menu,.action-overlay').forEach(e => e.remove()); }
+
+function closeMenu() {
+  document.querySelectorAll('.action-menu').forEach(e => e.remove());
+  document.removeEventListener('click', window._menuClose);
+}
 
 function viewRec(id) {
   const r = getRecs().find(x => String(x.id) === String(id)); if (!r) return;
