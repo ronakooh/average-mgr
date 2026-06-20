@@ -191,6 +191,22 @@ select option { background: var(--card); }
 .tbl .gold { color: var(--gold); font-weight: 500; }
 .tbl .pending { color: var(--text-3); font-style: italic; font-size: 11px; }
 
+/* ── MOBILE RECORD CARDS ── */
+.rec-card { background: var(--card); border-bottom: 1px solid var(--border-light); padding: 14px 16px; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; }
+.rec-card:last-child { border-bottom: none; }
+.rec-card:active { background: var(--bg); }
+.rec-card-photo { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+.rec-card-photo-empty { width: 52px; height: 52px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 18px; }
+.rec-card-body { flex: 1; min-width: 0; }
+.rec-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.rec-card-party { font-weight: 600; font-size: 14px; }
+.rec-card-cost { font-family: var(--mono); font-size: 14px; color: var(--accent); font-weight: 600; }
+.rec-card-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.rec-card-item { font-size: 12px; color: var(--text-2); }
+.rec-card-date { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
+.rec-card-mtr { font-size: 12px; font-family: var(--mono); color: var(--text-2); }
+.rec-card-menu { flex-shrink: 0; padding: 6px; margin: -6px -6px -6px 0; color: var(--text-3); background: none; border: none; cursor: pointer; font-size: 18px; }
+
 /* BADGE */
 .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
 .tag-green { background: var(--success-dim); color: var(--success); }
@@ -876,41 +892,64 @@ function renderRecords() {
     return;
   }
 
-  const rows = recs.map(r => {
-    const rid = JSON.stringify(String(r.id));
-    const qualityTag = r.quality
-      ? '<span class="tag tag-green">' + r.quality + '</span>'
-      : '<span class="tag tag-grey">—</span>';
-    const photoCell = r.print
-      ? '<img src="' + r.print + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:block" class="photo-thumb" alt="Print">'
-      : '<span style="color:var(--text-3);font-size:11px">—</span>';
-    const pcsCell = r.pcs ? r.pcs : '<span class="pending">TBD</span>';
-    const jCell = r.avgMtrPcs ? r.avgMtrPcs.toFixed(3) : '<span class="pending">TBD</span>';
-    const kCell = r.fabricCostPcs ? '₹' + r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>';
-    return '<tr class="rec-row" data-id="' + String(r.id) + '" style="cursor:pointer">'
-      + '<td style="width:90px;font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap">' + (r.date||'—') + '</td>'
-      + '<td style="width:110px;font-weight:500;white-space:nowrap">' + (r.party||'—') + '</td>'
-      + '<td style="width:90px;white-space:nowrap">' + qualityTag + '</td>'
-      + '<td style="width:90px;font-size:12px;white-space:nowrap;color:var(--text-2)">' + (r.itemName||'—') + '</td>'
-      + '<td style="width:50px">' + photoCell + '</td>'
-      + '<td style="width:70px;font-family:var(--mono);white-space:nowrap">' + (r.mtr ? r.mtr.toLocaleString('en-IN',{maximumFractionDigits:1}) : '—') + '</td>'
-      + '<td style="width:70px;font-family:var(--mono);white-space:nowrap">₹' + (r.rate||'—') + '</td>'
-      + '<td style="min-width:110px;font-family:var(--mono);color:var(--accent);font-weight:500;white-space:nowrap">₹' + (r.totalCost ? Math.round(r.totalCost).toLocaleString('en-IN') : '—') + '</td>'
-      + '<td style="width:70px;font-family:var(--mono);white-space:nowrap">' + pcsCell + '</td>'
-      + '<td style="width:90px;font-family:var(--mono);white-space:nowrap">' + jCell + '</td>'
-      + '<td style="min-width:100px;font-family:var(--mono);color:var(--gold);white-space:nowrap">' + kCell + '</td>'
-      + '<td style="width:44px"><button class="btn btn-ghost btn-sm menu-btn" data-id="' + String(r.id) + '" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>'
-      + '</tr>';
-  }).join('');
+  const isMobile = window.innerWidth < 640;
 
-  document.getElementById('recordsTable').innerHTML = `<table class="tbl" style="table-layout:auto">
-    <thead><tr>
-      <th>Date</th><th>Party (B)</th><th>Quality (L)</th><th>Item</th><th>Print</th>
-      <th>Mtr (E)</th><th>Rate (F)</th><th>Total Cost (G)</th>
-      <th>Pcs (H)</th><th>Avg Mtr (J)</th><th>Cost/Pcs (K)</th><th></th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+  if (isMobile) {
+    // Card layout for mobile
+    const cards = recs.map(r => {
+      const photo = r.print
+        ? '<img src="' + r.print + '" class="rec-card-photo" alt="Print">'
+        : '<div class="rec-card-photo-empty"><i class="ti ti-photo"></i></div>';
+      const qualityTag = r.quality ? '<span class="tag tag-green" style="font-size:10px;padding:2px 7px">' + r.quality + '</span>' : '';
+      const costStr = r.totalCost ? '₹' + Math.round(r.totalCost).toLocaleString('en-IN') : '—';
+      const mtrStr = r.mtr ? r.mtr + ' mtr @ ₹' + r.rate : '';
+      const pcsStr = r.pcs ? r.pcs + ' pcs' : '<span style="color:var(--gold);font-size:11px">Prod. pending</span>';
+      return '<div class="rec-card rec-row" data-id="' + String(r.id) + '">'
+        + photo
+        + '<div class="rec-card-body">'
+          + '<div class="rec-card-top">'
+            + '<span class="rec-card-party">' + (r.party||'—') + (r.itemName ? ' <span style="font-weight:400;color:var(--text-2)">· ' + r.itemName + '</span>' : '') + '</span>'
+            + '<span class="rec-card-cost">' + costStr + '</span>'
+          + '</div>'
+          + '<div class="rec-card-row">' + qualityTag + (r.date ? '<span class="rec-card-date">' + r.date + '</span>' : '') + '</div>'
+          + '<div class="rec-card-row"><span class="rec-card-mtr">' + mtrStr + '</span><span style="margin-left:auto">' + pcsStr + '</span></div>'
+        + '</div>'
+        + '<button class="rec-card-menu menu-btn" data-id="' + String(r.id) + '"><i class="ti ti-dots-vertical"></i></button>'
+        + '</div>';
+    }).join('');
+    document.getElementById('recordsTable').innerHTML = '<div class="tbl-wrap">' + cards + '</div>';
+
+  } else {
+    // Table layout for desktop
+    const rows = recs.map(r => {
+      const qualityTag = r.quality
+        ? '<span class="tag tag-green">' + r.quality + '</span>'
+        : '<span class="tag tag-grey">—</span>';
+      const photoCell = r.print
+        ? '<img src="' + r.print + '" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block" class="photo-thumb" alt="Print">'
+        : '<span style="color:var(--text-3);font-size:11px">—</span>';
+      const pcsCell = r.pcs ? r.pcs : '<span class="pending">TBD</span>';
+      const jCell = r.avgMtrPcs ? r.avgMtrPcs.toFixed(3) : '<span class="pending">TBD</span>';
+      const kCell = r.fabricCostPcs ? '₹' + r.fabricCostPcs.toFixed(2) : '<span class="pending">TBD</span>';
+      return '<tr class="rec-row" data-id="' + String(r.id) + '" style="cursor:pointer">'
+        + '<td style="font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap">' + (r.date||'—') + '</td>'
+        + '<td style="font-weight:500;white-space:nowrap">' + (r.party||'—') + '</td>'
+        + '<td style="white-space:nowrap">' + qualityTag + '</td>'
+        + '<td style="font-size:12px;white-space:nowrap;color:var(--text-2)">' + (r.itemName||'—') + '</td>'
+        + '<td>' + photoCell + '</td>'
+        + '<td style="font-family:var(--mono);white-space:nowrap">' + (r.mtr||'—') + '</td>'
+        + '<td style="font-family:var(--mono);white-space:nowrap">₹' + (r.rate||'—') + '</td>'
+        + '<td style="font-family:var(--mono);color:var(--accent);font-weight:500;white-space:nowrap">₹' + (r.totalCost ? Math.round(r.totalCost).toLocaleString('en-IN') : '—') + '</td>'
+        + '<td style="font-family:var(--mono);white-space:nowrap">' + pcsCell + '</td>'
+        + '<td style="font-family:var(--mono);white-space:nowrap">' + jCell + '</td>'
+        + '<td style="font-family:var(--mono);color:var(--gold);white-space:nowrap">' + kCell + '</td>'
+        + '<td><button class="btn btn-ghost btn-sm menu-btn" data-id="' + String(r.id) + '" style="padding:7px 9px;color:var(--text)"><i class="ti ti-dots-vertical" style="font-size:16px"></i></button></td>'
+        + '</tr>';
+    }).join('');
+    document.getElementById('recordsTable').innerHTML = '<table class="tbl" style="table-layout:auto">'
+      + '<thead><tr><th>Date</th><th>Party</th><th>Quality</th><th>Item</th><th>Print</th><th>Mtr</th><th>Rate</th><th>Total Cost</th><th>Pcs</th><th>Avg Mtr</th><th>Cost/Pcs</th><th></th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table>';
+  }
 }
 
 function clearFilters() {
@@ -971,7 +1010,6 @@ function closeMenu() {
 
 function viewRec(id) {
   const r = getRecs().find(x => String(x.id) === String(id)); if (!r) return;
-  const rid = JSON.stringify(String(r.id));
   document.getElementById('modalTitle').textContent = r.party + (r.itemName ? ' — ' + r.itemName : '') + (r.date ? ' · ' + r.date : '');
   let h = '';
   if (r.print) h += `<img src="${r.print}" class="modal-photo" alt="Print design">`;
@@ -991,12 +1029,23 @@ function viewRec(id) {
     <span class="dl">Avg Mtr/Pcs (J)</span><span class="dv" style="font-family:var(--mono);color:var(--gold)">${r.avgMtrPcs ? r.avgMtrPcs.toFixed(4)+' mtr' : '<span style="color:var(--gold)">TBD</span>'}</span>
     <span class="dl">Cost/Pcs (K)</span><span class="dv" style="font-family:var(--mono);color:var(--gold);font-weight:500">${r.fabricCostPcs ? '₹'+r.fabricCostPcs.toFixed(2) : '<span style="color:var(--gold)">TBD</span>'}</span>
   </div>`;
-  h += `<div style="display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-    <button class="btn btn-primary" style="flex:1" onclick="closeModal();editRec(${rid})"><i class="ti ti-edit"></i> Edit</button>
-    <button class="btn btn-ghost" onclick="closeModal();dupRec(${rid})"><i class="ti ti-copy"></i> Duplicate</button>
-    <button class="btn btn-danger" onclick="closeModal();delRec(${rid})"><i class="ti ti-trash"></i></button>
+  h += `<div class="modal-actions" data-id="${String(r.id)}" style="display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+    <button class="btn btn-primary" style="flex:1" data-action="edit"><i class="ti ti-edit"></i> Edit</button>
+    <button class="btn btn-ghost" data-action="dup"><i class="ti ti-copy"></i> Duplicate</button>
+    <button class="btn btn-danger" data-action="del"><i class="ti ti-trash"></i></button>
   </div>`;
   document.getElementById('modalBody').innerHTML = h;
+  // Delegated listener - no inline onclick needed
+  document.querySelector('.modal-actions').addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = this.dataset.id;
+    const action = btn.dataset.action;
+    closeModal();
+    if (action === 'edit') editRec(id);
+    else if (action === 'dup') dupRec(id);
+    else if (action === 'del') delRec(id);
+  });
   document.getElementById('detailModal').classList.add('open');
 }
 
