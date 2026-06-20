@@ -455,6 +455,7 @@ select option { background: var(--card); }
     <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">Data syncs to Google Sheet. Photos upload to Cloudinary and are visible on all devices.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="loadFromSheet().then(()=>{buildFilterDDs();renderRecords();toast('Synced from Sheets!')})"><i class="ti ti-refresh"></i> Sync from Sheets</button>
+      <button class="btn btn-ghost" onclick="pushMissingToSheet()"><i class="ti ti-upload"></i> Push missing to Sheet</button>
       <button class="btn btn-ghost" onclick="testCloudinary()"><i class="ti ti-photo"></i> Test Photo Upload</button>
       <button class="btn btn-ghost" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
       <button class="btn btn-danger" onclick="confirmClear()"><i class="ti ti-trash"></i> Clear all</button>
@@ -761,6 +762,8 @@ async function saveEntry() {
     const payload = { action: isEdit ? 'update' : 'insert', ...rec };
     try {
       await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+      // Wait 800ms between items so Apps Script doesn't drop requests
+      if (i < savedRecs.length - 1) await new Promise(r => setTimeout(r, 800));
     } catch(e) { console.error('Sync failed', e); }
   }
   localStorage.setItem(SYNC_TS, Date.now());
@@ -1326,7 +1329,36 @@ function confirmClear() {
   saveRecs([]); buildFilterDDs(); renderRecords(); toast('All cleared');
 }
 
-function initApp() {
+// ── PUSH MISSING TO SHEET ──
+async function pushMissingToSheet() {
+  if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE')) { toast('Sheet not configured'); return; }
+  setSS('busy', 'Checking Sheet...');
+  try {
+    // Get all IDs currently in the Sheet
+    const res = await fetch(SCRIPT_URL + '?load=1', { mode: 'cors' });
+    const data = await res.json();
+    const sheetIds = new Set((data.records||[]).map(r => String(r.id)));
+    // Find local records missing from Sheet
+    const local = getRecs();
+    const missing = local.filter(r => !sheetIds.has(String(r.id)));
+    if (!missing.length) { setSS('ok', 'All records already in Sheet'); toast('Nothing missing — Sheet is up to date!'); return; }
+    toast(`Found ${missing.length} missing records — syncing...`);
+    for (let i = 0; i < missing.length; i++) {
+      setSS('busy', `Pushing ${i+1} of ${missing.length}...`);
+      const rec = missing[i];
+      const payload = { action: 'insert', ...rec };
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+      if (i < missing.length - 1) await new Promise(r => setTimeout(r, 800));
+    }
+    setSS('ok', `Pushed ${missing.length} missing records to Sheet`);
+    toast(`Done! ${missing.length} records synced to Sheet`);
+  } catch(err) {
+    setSS('err', 'Push failed');
+    toast('Push failed: ' + err.message);
+  }
+}
+
+
   document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
   rewireBlur();
   addItem();
