@@ -898,7 +898,6 @@ function renderRecords() {
   const isMobile = window.innerWidth < 640;
 
   if (isMobile) {
-    // Card layout for mobile
     const cards = recs.map(r => {
       const photo = r.print
         ? '<img src="' + r.print + '" class="rec-card-photo" alt="Print">'
@@ -906,7 +905,17 @@ function renderRecords() {
       const qualityTag = r.quality ? '<span class="tag tag-green" style="font-size:10px;padding:2px 7px">' + r.quality + '</span>' : '';
       const costStr = r.totalCost ? '₹' + Math.round(r.totalCost).toLocaleString('en-IN') : '—';
       const mtrStr = r.mtr ? r.mtr + ' mtr @ ₹' + r.rate : '';
-      const pcsStr = r.pcs ? r.pcs + ' pcs' : '<span style="color:var(--gold);font-size:11px">Prod. pending</span>';
+      // Clean date — strip ISO timezone if present
+      const dateStr = r.date ? String(r.date).slice(0,10) : '';
+      // Production info
+      let prodStr = '';
+      if (r.pcs) {
+        prodStr = r.pcs + ' pcs';
+        if (r.avgMtrPcs) prodStr += ' · ' + parseFloat(r.avgMtrPcs).toFixed(3) + ' mtr/pc';
+        if (r.fabricCostPcs) prodStr += ' · ₹' + parseFloat(r.fabricCostPcs).toFixed(0) + '/pc';
+      } else {
+        prodStr = '<span style="color:var(--gold);font-size:11px">Prod. pending</span>';
+      }
       return '<div class="rec-card rec-row" data-id="' + String(r.id) + '">'
         + photo
         + '<div class="rec-card-body">'
@@ -914,8 +923,9 @@ function renderRecords() {
             + '<span class="rec-card-party">' + (r.party||'—') + (r.itemName ? ' <span style="font-weight:400;color:var(--text-2)">· ' + r.itemName + '</span>' : '') + '</span>'
             + '<span class="rec-card-cost">' + costStr + '</span>'
           + '</div>'
-          + '<div class="rec-card-row">' + qualityTag + (r.date ? '<span class="rec-card-date">' + r.date + '</span>' : '') + '</div>'
-          + '<div class="rec-card-row"><span class="rec-card-mtr">' + mtrStr + '</span><span style="margin-left:auto">' + pcsStr + '</span></div>'
+          + '<div class="rec-card-row">' + qualityTag + (dateStr ? '<span class="rec-card-date">' + dateStr + '</span>' : '') + '</div>'
+          + '<div class="rec-card-row"><span class="rec-card-mtr">' + mtrStr + '</span></div>'
+          + '<div class="rec-card-row"><span style="font-size:11px;font-family:var(--mono)">' + prodStr + '</span></div>'
         + '</div>'
         + '<button class="rec-card-menu menu-btn" data-id="' + String(r.id) + '"><i class="ti ti-dots-vertical"></i></button>'
         + '</div>';
@@ -1088,7 +1098,14 @@ function renderSummary() {
 
   const grandCost = recs.reduce((s,r) => s + (r.totalCost||0), 0);
   const grandMtr = recs.reduce((s,r) => s + (r.mtr||0), 0);
-  const grandPcs = recs.reduce((s,r) => s + (r.pcs||0), 0);
+
+  // Pcs: count per GROUP not per item (a group of Kurta+Pant = 1 set of pcs)
+  const groupPcs = {};
+  recs.forEach(r => {
+    const gid = r.groupId || String(r.id);
+    if (r.pcs && !groupPcs[gid]) groupPcs[gid] = r.pcs;
+  });
+  const grandPcs = Object.values(groupPcs).reduce((s,p) => s + p, 0);
 
   document.getElementById('sum-total').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
@@ -1105,12 +1122,14 @@ function renderSummary() {
   const qMap = {};
   recs.forEach(r => {
     const q = r.quality || '(No Quality)';
-    if (!qMap[q]) qMap[q] = { cost:0, mtr:0, pcs:0, count:0, parties: new Set() };
+    if (!qMap[q]) qMap[q] = { cost:0, mtr:0, count:0, parties: new Set(), groups: {} };
     qMap[q].cost += r.totalCost || 0;
     qMap[q].mtr += r.mtr || 0;
-    qMap[q].pcs += r.pcs || 0;
     qMap[q].count++;
     if (r.party) qMap[q].parties.add(r.party);
+    // Track pcs per group
+    const gid = r.groupId || String(r.id);
+    if (r.pcs && !qMap[q].groups[gid]) qMap[q].groups[gid] = r.pcs;
   });
 
   const sorted = Object.entries(qMap).sort((a,b) => b[1].cost - a[1].cost);
@@ -1122,8 +1141,10 @@ function renderSummary() {
     const pct = grandCost > 0 ? Math.round((data.cost / grandCost) * 100) : 0;
     const barPct = Math.round((data.cost / maxCost) * 100);
     const color = colors[i % colors.length];
-    const avgCostPcs = data.pcs > 0 ? data.cost / data.pcs : null;
-    const avgMtrPcs = data.pcs > 0 ? data.mtr / data.pcs : null;
+    // Pcs = sum of unique group pcs for this quality
+    const qPcs = Object.values(data.groups).reduce((s,p) => s + p, 0);
+    const avgCostPcs = qPcs > 0 ? data.cost / qPcs : null;
+    const avgMtrPcs = qPcs > 0 ? data.mtr / qPcs : null;
 
     // Party breakdown
     const partyRecs = recs.filter(r => (r.quality || '(No Quality)') === q);
@@ -1167,9 +1188,10 @@ function renderSummary() {
       <div id="sq-${i}" class="summary-body">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
           <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px">Total Metres</div><div style="font-family:var(--mono);font-size:14px;margin-top:2px">${data.mtr.toLocaleString('en-IN',{maximumFractionDigits:1})}</div></div>
-          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px">Total Pcs</div><div style="font-family:var(--mono);font-size:14px;margin-top:2px">${data.pcs || '—'}</div></div>
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px">Total Pcs</div><div style="font-family:var(--mono);font-size:14px;margin-top:2px">${qPcs || '—'}</div></div>
           <div style="background:var(--gold-dim);border-radius:var(--radius-sm);padding:10px"><div style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.4px">Avg Cost/Pcs</div><div style="font-family:var(--mono);font-size:14px;color:var(--gold);margin-top:2px">${avgCostPcs ? '₹'+avgCostPcs.toFixed(2) : '—'}</div></div>
         </div>
+        ${avgMtrPcs ? `<div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px;margin-bottom:14px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.4px">Avg Mtr/Pcs (all items combined)</div><div style="font-family:var(--mono);font-size:14px;margin-top:2px">${avgMtrPcs.toFixed(4)} mtr</div></div>` : ''}
         <div style="font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Party breakdown</div>
         ${partyChart}
         <button class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:11px" onclick="document.getElementById('f-quality').value='${q}';switchTab('records');renderRecords()">
